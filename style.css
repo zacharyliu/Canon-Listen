@@ -1,0 +1,324 @@
+body {
+    font-family: 'Segoe UI', 'Calibri', 'Trebuchet MS', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+#container {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    min-width: 1000px;
+    min-height: 500px;
+    overflow: auto;
+}
+
+#header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 41px;
+    background-color: #EEE;
+    box-shadow: 0 0 10px #AAA;
+}
+
+#header_inner {
+    width: 900px;
+    height: 41px;
+    margin: 0 auto 0 auto;
+}
+
+#title {
+    font-size: 1.7em;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+#indicator {
+    border: 1px solid #CCC;
+    float: right;
+    height: 22px;
+    padding: 4px;
+    margin-top: 5px;
+    margin-right: 5px;
+    background-color: #FFF;
+}
+
+#main_wrapper {
+    position: absolute;
+    top: 42px;
+    right: 0;
+    bottom: 60px;
+    left: 0;
+}
+
+#main {
+    margin-left: auto;
+    margin-right: auto;
+    width: 900px;
+    height: 100%;
+    position: relative;
+}
+
+#left_wrapper {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 300px;
+}
+
+#left {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.box {
+    padding: 10px;
+}
+
+#playlist_box {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 220px;
+    left: 0;
+    padding: 10px 0 !important;
+}
+
+.box_inner {
+    
+}
+
+#playlist {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.playlist_header {
+    background-color: #DDD;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 5px 10px;
+}
+
+.playlist_items {
+    list-style-type: none;
+    padding: 0;
+    margin: 2px 0 7px 0;
+}
+
+.playlist_items li {
+    background-color: #EEE;
+    padding: 3px 20px;
+    margin-bottom: 2px;
+    position: relative;
+}
+
+.playlist_items li.current_song:before {
+    content: ">";
+    position: absolute;
+    left: 5px;
+}
+
+.playlist_items li.current_song {
+    font-weight: bold;
+}
+
+#video_box {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 200px;
+    background-color: #000;
+}
+
+#right_wrapper {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 600px;
+}
+
+#right {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#users_box {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 25%;
+}
+
+#users_box_inner {
+    position: absolute;
+    top: 10px;
+    bottom: 15px;
+    left: 10px;
+    right: 10px;
+    overflow-y: auto;
+}
+
+#users_box_title {
+    text-transform: uppercase;
+    font-size: 0.75em;
+    text-align: center;
+}
+
+#users_box ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0 0 0 7px;
+}
+
+#users_box ul li {
+    font-size: 0.9em;
+}
+
+#chat_box {
+    position: absolute;
+    top: 25%;
+    right: 0;
+    bottom: 100px;
+    left: 0;
+}
+
+#chat_history {
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    bottom: 47px;
+    left: 10px;
+    padding: 5px;
+    font-size: 0.95em;
+}
+
+.chat_history_item {
+    margin: 2px 0;
+    border-top: 1px solid #EEE;
+}
+
+.chat_history_item_name:after {
+    content: ': ';
+}
+
+#chat_history_typing {
+    font-style: italic;
+    color: #555;
+    font-size: 0.9em;
+    text-align: right;
+}
+
+#chat_input {
+    height: 30px;
+    position: absolute;
+    right: 10px;
+    bottom: 15px;
+    left: 10px;
+}
+
+#chat_input_content {
+    width: 570px;
+    padding: 3px;
+}
+
+#lyrics_box {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 100px;
+}
+
+#controls_wrapper {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 60px;
+    background-color: #DDD;
+    box-shadow: 0 0 10px #AAA;
+}
+
+#controls {
+    position: relative;
+    width: 900px;
+    height: 60px;
+    margin: 0 auto 0 auto;
+}
+
+.control_wrapper {
+    text-align: center;
+    padding: 5px 0;
+}
+
+#nowplaying {
+    float: left;
+    width: 300px;
+}
+
+#nowplaying_song {
+    margin-top: 5px;
+    font-size: 0.9em;
+}
+
+#progress {
+    float: left;
+    width: 450px;
+}
+
+#progressbar {
+    margin: 6px auto 0 auto;
+    height: 10px;
+    width: 400px;
+    padding: 3px;
+    background-color: #CCC;
+}
+
+#progressbar_inner {
+    background-color: #888;
+    width: 30%;
+    height: 100%;
+}
+
+#volume {
+    float: left;
+    width: 150px;
+}
+
+#volumebar {
+    margin: 15px auto 0 auto;
+    width: 100px;
+    height: 2px;
+    background-color: #CCC;
+    position: relative;
+}
+
+#volumebar_handle {
+    width: 12px;
+    height: 12px;
+    background-color: #888;
+    position: absolute;
+    margin-top: -5px;
+    margin-left: -6px;
+    left: 50%;
+    border-radius: 6px;
+}
+
+.label {
+    font-size: 0.7em;
+    text-transform: uppercase;
+}
