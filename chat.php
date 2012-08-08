@@ -79,9 +79,8 @@ function send_retry_message($retry_time) {
     flush();
 }
 
-if (isset($_GET['message'])) {
-    // Got a new message
-    $message = $_GET['message'];
+function add_to_cache($event = 'message', $message = null) {
+    global $cache_filename, $cache_timeout, $name;
     
     // Load chat cache
     $cache = load($cache_filename);
@@ -90,13 +89,28 @@ if (isset($_GET['message'])) {
     $cache = prune($cache, $cache_timeout);
     
     // Add new entry
-    $entry = array('time' => microtime(true), 'message' => $message, 'name' => $name);
+    $entry = array('time' => microtime(true), 'event' => $event, 'message' => $message, 'name' => $name);
     array_push($cache, $entry);
     
     // Write new cache file
     write($cache_filename, $cache);
+}
+
+if (isset($_POST['message'])) {
+    // Got a new message
+    $message = $_POST['message'];
+    
+    // Add message to cache
+    add_to_cache('message', $message);
+} else if (isset($_POST['event'])) {
+    $event = $_POST['event'];
+    
+    if ($event == 'typing') {
+        // Typing notification
+        add_to_cache('typing');
+    }
 } else {
-    // Not a new message, instead initalize Server-Sent Events service
+    // Not a new item, instead initalize Server-Sent Events service
     
     // Get inital time
     $load_time = microtime(true);
@@ -145,8 +159,7 @@ if (isset($_GET['message'])) {
         foreach ($cache as $message) {
             if ($message['time'] > $last_event_id) {
                 $last_event_id = $message['time'];
-                $item = json_encode(array('name' => $message['name'], 'message' => $message['message']));
-                send_message($message['time'], $item);
+                send_message($message['time'], json_encode($message));
             }
         }
         usleep(250000);
