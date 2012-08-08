@@ -1,8 +1,8 @@
 <?php
 
-$cache_filename = 'chat.txt';
+$cache_filename = './chat.txt';
 $cache_timeout = 10;
-$users_filename = 'users.txt';
+$users_filename = './users.txt';
 $users_timeout = 60;
 $server_timeout = 25;
 
@@ -12,14 +12,26 @@ if (isset($_GET['name'])) {
     $name = 'anonymous';
 }
 
-function load($filename) {
-    $file = fopen($filename, 'r');
-    while ($data == false) {
-        $data = fread($file, filesize($filename));
+function load($filename, $persistant = true) {
+    if (filesize($filename) > 0) {
+        $file = fopen($filename, 'r');
+        $data = false;
+        if ($persistant) {
+            while ($data == false) {
+                $data = fread($file, filesize($filename));
+            }
+        } else {
+            $data = fread($file, filesize($filename));
+            if ($data == false) {
+                $data = array();
+            }
+        }
+        fclose($file);
+        
+        $data = unserialize($data);
+    } else {
+        $data = array();
     }
-    fclose($file);
-    
-    $data = unserialize($data);
     
     return $data;
 }
@@ -38,9 +50,10 @@ function prune($data, $timeout) {
     $i = 0;
     while ($i < count($data)) {
         if (microtime(true) - $data[$i]['time'] > $timeout) {
-            unset($data[$i]);
+            array_splice($data, $i, 1);
+        } else {
+            $i++;
         }
-        $i++;
     }
     
     return $data;
@@ -50,7 +63,9 @@ function send_message($id, $msg, $event = null) {
     if ($event != null) {
         echo "event: $event" . PHP_EOL;
     }
-    echo "id: $id" . PHP_EOL;
+    if ($id != null) {
+        echo "id: $id" . PHP_EOL;
+    }
     echo "data: $msg" . PHP_EOL;
     echo PHP_EOL;
     ob_flush();
@@ -86,7 +101,7 @@ if (isset($_GET['message'])) {
     // Get inital time
     $load_time = microtime(true);
     
-    $cache = load_cache();
+    $cache = load($cache_filename);
     
     header('Content-Type: text/event-stream');
     header('Cache-Control: no-cache'); // recommended to prevent caching of event data.
@@ -94,9 +109,19 @@ if (isset($_GET['message'])) {
     // Refresh the current user in the list of online users
     $users = load($users_filename);
     $users = prune($users, $users_timeout);
-    $entry = array('time' => microtime(true), 'name' => $name);
-    array_push($users, $entry);
-    write($users_filename, $users);
+    // Make sure the user isn't already in the list
+    $user_already_present = false;
+    foreach ($users as $user) {
+        if ($user['name'] == $name) {
+            $user_already_present = true;
+            break;
+        }
+    }
+    if (!$user_already_present) {
+        $entry = array('time' => microtime(true), 'name' => $name);
+        array_push($users, $entry);
+        write($users_filename, $users);
+    }
     
     // Send the list of online users
     $users_list = array();
@@ -104,7 +129,7 @@ if (isset($_GET['message'])) {
         array_push($users_list, $user['name']);
     }
     $users_list = json_encode($users_list);
-    send_message(microtime(true), $users_list, 'users');
+    send_message(null, $users_list, 'users');
     
     // Begin checking for new messages and streaming them to the browser when appropriate
     if (isset($_SERVER['Last-Event-ID'])) {
@@ -116,10 +141,12 @@ if (isset($_GET['message'])) {
     send_retry_message(250);
     
     while (microtime(true) - $load_time < $server_timeout) {
-        $cache = load($cache_filename);
+        $cache = load($cache_filename, false);
         foreach ($cache as $message) {
             if ($message['time'] > $last_event_id) {
-                send_message($message['time'], $message['message']);
+                $last_event_id = $message['time'];
+                $item = json_encode(array('name' => $message['name'], 'message' => $message['message']));
+                send_message($message['time'], $item);
             }
         }
         usleep(250000);
