@@ -1,4 +1,7 @@
 var ui = {
+    init: function() {
+        ui.chat.init();
+    },
     playlist: {
         importData: function(data) {
             for (var i=0; i<data.sections.length; i++) {
@@ -120,10 +123,18 @@ var ui = {
                     var data = JSON.parse(e.data);
                     ui.chat.message.display(data.name, data.message);
                 }, false);
+                source.addEventListener('typing', function(e) {
+                    var data = JSON.parse(e.data);
+                    ui.chat.typingNotification.display(data.name);
+                }, false);
+                source.addEventListener('debug', function(e) {
+                    alert(e.data);
+                })
                 
                 // Bind event handler to the input field to send a message
                 $("#chat_input_content").keypress(function(e) {
                     // Send a typing notification, at most once a second
+                    ui.chat.typingNotification.send();
                     
                     // If the enter key is pressed
                     if (e.which == 13) {
@@ -137,6 +148,9 @@ var ui = {
                         $("#chat_input_content").val("");
                     }
                 });
+                
+                // Update the typing notifications once
+                ui.chat.typingNotification.__update();
             } else {
                 alert("Sorry, your browser does not support real-time chat. Enjoy the music!");
             }
@@ -145,6 +159,9 @@ var ui = {
             display: function(name, message) {
                 var html = '<div class="chat_history_item"><span class="chat_history_item_name">' + name + '</span><span class="chat_history_item_message">' + message + '</span></div>';
                 $("#chat_history_typing").before(html);
+                
+                // Remove any typing notification from this user
+                ui.chat.typingNotification.remove(name);
             },
             send: function(message) {
                 $.post(ui.chat.__getURL(), {'message': message});
@@ -171,10 +188,13 @@ var ui = {
             },
             __current: {},
             remove: function(name) {
-                delete this.__current[name];
-                this.__update();
+                if (typeof(this.__current[name]) != 'undefined') {
+                    window.clearTimeout(this.__current[name].timeoutID);
+                    delete this.__current[name];
+                    this.__update();
+                }
             },
-            __hidden: true,
+            __hidden: false,
             __update: function() {
                 var count = utils.objCount(this.__current);
                 if (count == 0) {
@@ -204,6 +224,14 @@ var ui = {
                         this.__hidden = false;
                     }
                 }
+            },
+            lastSent: 0,
+            __floodRate: 1000,
+            send: function() {
+                if (Date.now() - this.lastSent > this.__floodRate) {
+                    $.post(ui.chat.__getURL(), {'event': 'typing'});
+                    this.lastSent = Date.now();
+                }
             }
         }
     },
@@ -221,3 +249,7 @@ var utils = {
         return size;
     }
 }
+
+$(function() {
+    ui.init();
+});

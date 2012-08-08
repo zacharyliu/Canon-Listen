@@ -28,6 +28,8 @@ function load($filename, $persistant = true) {
         }
         fclose($file);
         
+        //$data = preg_replace('!s:(\d+):"(.*?)";!se', "'s:'.strlen('$2').':\"$2\";'", $data); 
+        $data = trim($data);
         $data = unserialize($data);
     } else {
         $data = array();
@@ -96,6 +98,11 @@ function add_to_cache($event = 'message', $message = null) {
     write($cache_filename, $cache);
 }
 
+function error_handler($errno, $errstr) {
+    send_message(null, "Error: $errno - $errstr", 'debug');
+}
+//set_error_handler('error_handler');
+
 if (isset($_POST['message'])) {
     // Got a new message
     $message = $_POST['message'];
@@ -115,10 +122,10 @@ if (isset($_POST['message'])) {
     // Get inital time
     $load_time = microtime(true);
     
-    $cache = load($cache_filename);
-    
     header('Content-Type: text/event-stream');
-    header('Cache-Control: no-cache'); // recommended to prevent caching of event data.
+    header('Cache-Control: no-cache');
+    
+    //send_message(null, 'Test', 'debug');
     
     // Refresh the current user in the list of online users
     $users = load($users_filename);
@@ -159,7 +166,12 @@ if (isset($_POST['message'])) {
         foreach ($cache as $message) {
             if ($message['time'] > $last_event_id) {
                 $last_event_id = $message['time'];
-                send_message($message['time'], json_encode($message));
+                if ($message['event'] != 'message') {
+                    $event = $message['event'];
+                } else {
+                    $event = null;
+                }
+                send_message($message['time'], json_encode($message), $event);
             }
         }
         usleep(250000);
