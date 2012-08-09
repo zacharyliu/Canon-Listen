@@ -405,15 +405,16 @@ var drivers = {
                     },
                     events: {
                         'onReady': function(e) {
-                            //if (drivers.music.__firstPlay) {
-                                e.target.seekTo(time, true);
-                            //    drivers.music.__firstPlay = false;
-                            //}
+                            e.target.seekTo(time, true);
                             drivers.music.__progressUpdater = window.setInterval(function() {
                                 drivers.music.updateProgress();
                             }, 200);
                         },
                         'onStateChange': function(e) {
+                            if (drivers.music.__firstPlay && e.data == 1) {
+                                e.target.seekTo(time, true);
+                                drivers.music.__firstPlay = false;
+                            }
                             if (e.data == YT.PlayerState.PAUSED) {
                                 e.target.playVideo();
                             }
