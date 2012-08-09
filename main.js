@@ -269,7 +269,20 @@ var ui = {
         }
     },
     controls: {
-        
+        nowplaying: {
+            update: function(title) {
+                $("#nowplaying_song").animate({opacity: 0}, 200, function() {
+                    $(this).html(title).animate({opacity: 1}, 200);
+                });
+            },
+        },
+        progress: {
+            update: function(progress) {
+                // progress is a float between 0 and 1 indicating the percentage of the video which has elapsed
+                progress = (progress * 100) + "%";
+                $("#progressbar_inner").css({width: progress});
+            }
+        }
     },
     player: {
         __timeOffset: 0,
@@ -365,6 +378,9 @@ var ui = {
             var songs = ui.playlist.getSongs();
             var song = songs[index];
             drivers.music.play(song, time);
+            
+            // Update the now playing indicator
+            ui.controls.nowplaying.update(songs[index].title);
         },
         end: function() {
             return;
@@ -376,7 +392,10 @@ var drivers = {
     music: {
         __player: null,
         __firstPlay: true,
+        __progressUpdater: null,
+        __currentSong: null,
         play: function(song, time) {
+            this.__currentSong = song;
             if (this.__player == null) {
                 this.__player = new YT.Player('player', {
                     height: '200',
@@ -395,6 +414,9 @@ var drivers = {
                                 e.target.seekTo(time, true);
                                 drivers.music.__firstPlay = false;
                             }
+                            drivers.music.__progressUpdater = window.setInterval(function() {
+                                drivers.music.updateProgress();
+                            }, 200);
                         },
                         'onStateChange': function(e) {
                             if (e.data == YT.PlayerState.PAUSED) {
@@ -406,6 +428,15 @@ var drivers = {
             } else {
                 this.__player.loadVideoById(song.id);
             }
+        },
+        updateProgress: function() {
+            var currentTime = drivers.music.__player.getCurrentTime();
+            var progress = currentTime / drivers.music.__currentSong.duration;
+            if (progress > 1) {
+                progress = 1;
+            }
+            
+            ui.controls.progress.update(progress);
         }
     }
 }

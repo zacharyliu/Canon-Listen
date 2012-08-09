@@ -15,15 +15,15 @@
         {
             "title": "Lower Canon",
             "songs": [
-                {"title": "Blister in the Sun"},
-                {"title": "Oh L'Amour"},
-                {"title": "Rock Lobster"},
-                {"title": "Dr. Mario"},
-                {"title": "James Brown Is Dead"},
-                {"title": "Birdhouse in Your Soul"},
-                {"title": "It's the End of the World as We Know It"},
-                {"title": "Tunak Tunak Tun"},
-                {"title": "The Time Warp"}
+                {"title": "Blister in the Sun", "id": "JE-dqW4uBEE", "duration": 145},
+                {"title": "Oh L'Amour", "id": "UyOOYn3A_6I", "duration": 194},
+                {"title": "Rock Lobster", "id": "tDZy6-fMCw4", "duration": 258},
+                {"title": "Dr. Mario", "id": "B1VHjkIu16U", "duration": 80},
+                {"title": "James Brown Is Dead", "id": "dN8e9b2ON8s", "duration": 212},
+                {"title": "Birdhouse in Your Soul", "id": "NAbZzdalZh4", "duration": 194},
+                {"title": "It's the End of the World as We Know It", "id": "Z0GFRcFm-aY", "duration": 244},
+                {"title": "Tunak Tunak Tun", "id": "s9qvCTdBLDs", "duration": 258},
+                {"title": "The Time Warp", "id": "a_7u3nhANa4", "duration": 200}
             ]
         }
     ]
