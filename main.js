@@ -285,11 +285,7 @@ var ui = {
         }
     },
     player: {
-        __timeOffset: 0,
         __eventData: {},
-        getTime: function() {
-            return Math.floor(Date.now() / 1000) + this.__timeOffset;
-        },
         init: function() {
             // Get event information
             $.getJSON(ui.__eventUrl, function(eventData) {
@@ -303,14 +299,10 @@ var ui = {
                     $.get("time.txt?" + Date.now(), function(data, text, xhr) {
                         var dateStr = xhr.getResponseHeader('Date');
                         var serverTime = Date.parse(new Date(Date.parse(dateStr)).toUTCString()) / 1000;
-                        var localTime = Date.parse(new Date().toUTCString()) / 1000;
-                        ui.player.__timeOffset = serverTime -  localTime;
-                        
-                        console.log("Time offset calculated: " + ui.player.__timeOffset);
                         
                         // Use event start time to calculate current position in playlist
                         var startTime = ui.player.__eventData.startTime;
-                        var timelinePosition = ui.player.getTime() - startTime;
+                        var timelinePosition = serverTime - startTime;
                         
                         console.log(timelinePosition);
                         
