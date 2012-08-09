@@ -243,8 +243,10 @@ var ui = {
                     }
                 } else {
                     var names = [];
-                    for (item in this.__current) {
-                        names.push(item);
+                    for (var item in this.__current) {
+                        if (this.__current.hasOwnProperty(item)) {
+                            names.push(item);
+                        }
                     }
                     var phrase = "";
                     if (count == 1) {
