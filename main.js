@@ -179,11 +179,7 @@ var ui = {
                 })
                 
                 // Bind event handler to the input field to send a message
-                $("#chat_input_content").keypress(function(e) {
-                    // Send a typing notification, at most once a second
-                    ui.chat.typingNotification.send();
-                    
-                    // If the enter key is pressed
+                $("#chat_input_content").keypress(function(e) {// If the enter key is pressed
                     if (e.which == 13) {
                         // Get the current message
                         var message = $("#chat_input_content").val();
@@ -193,6 +189,9 @@ var ui = {
                         
                         // Clear the message from the input field
                         $("#chat_input_content").val("");
+                    } else {
+                        // Send a typing notification, at most once a second
+                        ui.chat.typingNotification.send();
                     }
                 });
                 
@@ -201,11 +200,14 @@ var ui = {
             //} else {
             //    alert("Sorry, your browser does not support real-time chat. Enjoy the music!");
             ///}
+            
+            // Set focus to the chat box
+            $("#chat_input_content").focus();
         },
         message: {
             display: function(name, message) {
                 var html = '<div class="chat_history_item"><span class="chat_history_item_name">' + name + '</span><span class="chat_history_item_message">' + message + '</span></div>';
-                $("#chat_history_typing").before(html);
+                $(html).insertBefore("#chat_history_typing").css({'opacity': 0}).animate({'opacity': 1}, 50);
                 
                 // Remove any typing notification from this user
                 ui.chat.typingNotification.remove(name);
@@ -214,7 +216,9 @@ var ui = {
                 $("#chat_history").scrollTo('max');
             },
             send: function(message) {
-                $.post(ui.chat.__getURL(), {'message': message});
+                if (message != '') {
+                    $.post(ui.chat.__getURL(), {'message': message});
+                }
             }
         },
         typingNotification: {
