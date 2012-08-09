@@ -196,11 +196,17 @@ body {
     left: 0;
 }
 
+#chat_box_title {
+    text-transform: uppercase;
+    font-size: 0.75em;
+    text-align: center;
+}
+
 #chat_history {
     overflow-x: hidden;
     overflow-y: auto;
     position: absolute;
-    top: 10px;
+    top: 30px;
     right: 10px;
     bottom: 47px;
     left: 10px;
