@@ -4,7 +4,7 @@ $cache_filename = './chat.txt';
 $cache_timeout = 10000;
 $users_filename = './users.txt';
 $users_timeout = 60000;
-$server_timeout = 25000;
+$server_timeout = 2000;
 
 if (isset($_GET['name'])) {
     $name = $_GET['name'];
@@ -129,7 +129,23 @@ if (isset($_POST['message'])) {
     header('Content-Type: text/event-stream');
     header('Cache-Control: no-cache');
     
-    //send_message(null, 'Test', 'debug');
+    header('Access-Control-Allow-Origin: *');
+    
+    // prevent bufferring
+    if (function_exists('apache_setenv')) {
+        @apache_setenv('no-gzip', 1);
+    }
+    @ini_set('zlib.output_compression', 0);
+    @ini_set('implicit_flush', 1);
+    //for ($i = 0; $i < ob_get_level(); $i++) { ob_end_flush(); }
+    ob_implicit_flush(1);
+    
+    // For Internet Explorer, send 2KB of padding to work around a bug
+    $browser = $_SERVER['HTTP_USER_AGENT'];
+    if (strpos($browser, 'MSIE') != false) {
+        // Internet Explorer
+        echo ':' . str_repeat(' ', 2048) . "\n";
+    }
     
     // Refresh the current user in the list of online users
     $users = load($users_filename);
@@ -158,7 +174,9 @@ if (isset($_POST['message'])) {
     
     // Begin checking for new messages and streaming them to the browser when appropriate
     if (isset($_SERVER['HTTP_LAST_EVENT_ID'])) {
-        $last_event_id = $_SERVER['HTTP_LAST_EVENT_ID'];
+        $last_event_id = intval($_SERVER['HTTP_LAST_EVENT_ID']);
+    } else if (isset($_GET['Last-Event-ID'])) {
+        $last_event_id = intval($_GET['Last-Event-ID']);
     } else {
         $last_event_id = 0;
     }

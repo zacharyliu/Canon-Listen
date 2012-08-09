@@ -42,9 +42,10 @@ var ui = {
                 if ($(this).html() == title) {
                     $("#playlist li").removeClass('current_song');
                     $(this).addClass('current_song');
+                    $("#playlist").scrollTo($(this), 300);
                     return false;
                 }
-            })
+            });
         },
         getSongs: function() {
             var data = ui.playlist.__playlist;
@@ -69,6 +70,8 @@ var ui = {
             for (var i=0; i<results.add.length; i++) {
                 this.__add(results.add[i].index, results.add[i].name);
             }
+            
+            $("#indicator").html(newArray.length + ' online');
         },
         __getOldArray: function() {
             var oldArray = [];
@@ -144,7 +147,7 @@ var ui = {
         },
         init: function() {
             // Initialize Server-Sent Events service
-            if (!!window.EventSource) {
+            //if (!!window.EventSource) {
                 var source = new EventSource(this.__getURL());
                 
                 // Add event handlers
@@ -184,9 +187,9 @@ var ui = {
                 
                 // Update the typing notifications once
                 ui.chat.typingNotification.__update();
-            } else {
-                alert("Sorry, your browser does not support real-time chat. Enjoy the music!");
-            }
+            //} else {
+            //    alert("Sorry, your browser does not support real-time chat. Enjoy the music!");
+            ///}
         },
         message: {
             display: function(name, message) {
@@ -195,6 +198,9 @@ var ui = {
                 
                 // Remove any typing notification from this user
                 ui.chat.typingNotification.remove(name);
+                
+                // Scroll the chat history
+                $("#chat_history").scrollTo('max');
             },
             send: function(message) {
                 $.post(ui.chat.__getURL(), {'message': message});
@@ -232,7 +238,7 @@ var ui = {
                 var count = utils.objCount(this.__current);
                 if (count == 0) {
                     if (!this.__hidden) {
-                        $("#chat_history_typing").html("").stop(true).animate({'height': '0'}, 100);
+                        $("#chat_history_typing").html("").stop(true).animate({'opacity': '0', 'height': '0'}, 100);
                         this.__hidden = true;
                     }
                 } else {
@@ -253,10 +259,13 @@ var ui = {
                     }
                     $("#chat_history_typing").html(phrase);
                     if (this.__hidden) {
-                        $("#chat_history_typing").stop(true).animate({'height': '20px'}, 100);
+                        $("#chat_history_typing").stop(true).css({'height': '20px'}).animate({'opacity': '1'}, 100);
                         this.__hidden = false;
                     }
                 }
+                
+                // Scroll the chat history
+                $("#chat_history").scrollTo('max');
             },
             lastSent: 0,
             __floodRate: 1000,
