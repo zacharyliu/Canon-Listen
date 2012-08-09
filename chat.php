@@ -1,10 +1,10 @@
 <?php
 
 $cache_filename = './chat.txt';
-$cache_timeout = 10;
+$cache_timeout = 10000;
 $users_filename = './users.txt';
-$users_timeout = 60;
-$server_timeout = 25;
+$users_timeout = 60000;
+$server_timeout = 25000;
 
 if (isset($_GET['name'])) {
     $name = $_GET['name'];
@@ -16,16 +16,16 @@ function load($filename, $persistant = true) {
     if (filesize($filename) > 0) {
         $file = fopen($filename, 'r');
         $data = false;
-        if ($persistant) {
-            while ($data == false) {
-                $data = fread($file, filesize($filename));
-            }
-        } else {
+//        if ($persistant) {
+///            while ($data == false) {
+//                $data = fread($file, filesize($filename));
+//            }
+//        } else {
             $data = fread($file, filesize($filename));
             if ($data == false) {
                 $data = array();
             }
-        }
+//        }
         fclose($file);
         
         //$data = preg_replace('!s:(\d+):"(.*?)";!se', "'s:'.strlen('$2').':\"$2\";'", $data); 
@@ -42,16 +42,16 @@ function write($filename, $data) {
     $data = serialize($data);
     $file = fopen($filename, 'w');
     $status = false;
-    while ($status == false) {
+//    while ($status == false) {
         $status = fwrite($file, $data);
-    }
+//    }
     fclose($file);
 }
 
 function prune($data, $timeout) {
     $i = 0;
     while ($i < count($data)) {
-        if (microtime(true) - $data[$i]['time'] > $timeout) {
+        if (mtime() - $data[$i]['time'] > $timeout) {
             array_splice($data, $i, 1);
         } else {
             $i++;
@@ -91,17 +91,21 @@ function add_to_cache($event = 'message', $message = null) {
     $cache = prune($cache, $cache_timeout);
     
     // Add new entry
-    $entry = array('time' => microtime(true), 'event' => $event, 'message' => $message, 'name' => $name);
+    $entry = array('time' => mtime(), 'event' => $event, 'message' => $message, 'name' => $name);
     array_push($cache, $entry);
     
     // Write new cache file
     write($cache_filename, $cache);
 }
 
+function mtime() {
+    return intval(microtime(true) * 1000);
+}
+
 function error_handler($errno, $errstr) {
     send_message(null, "Error: $errno - $errstr", 'debug');
 }
-//set_error_handler('error_handler');
+set_error_handler('error_handler');
 
 if (isset($_POST['message'])) {
     // Got a new message
@@ -120,7 +124,7 @@ if (isset($_POST['message'])) {
     // Not a new item, instead initalize Server-Sent Events service
     
     // Get inital time
-    $load_time = microtime(true);
+    $load_time = mtime();
     
     header('Content-Type: text/event-stream');
     header('Cache-Control: no-cache');
@@ -139,7 +143,7 @@ if (isset($_POST['message'])) {
         }
     }
     if (!$user_already_present) {
-        $entry = array('time' => microtime(true), 'name' => $name);
+        $entry = array('time' => mtime(), 'name' => $name);
         array_push($users, $entry);
         write($users_filename, $users);
     }
@@ -153,28 +157,37 @@ if (isset($_POST['message'])) {
     send_message(null, $users_list, 'users');
     
     // Begin checking for new messages and streaming them to the browser when appropriate
-    if (isset($_SERVER['Last-Event-ID'])) {
-        $last_event_id = $_SERVER['Last-Event-ID'];
+    if (isset($_SERVER['HTTP_LAST_EVENT_ID'])) {
+        $last_event_id = $_SERVER['HTTP_LAST_EVENT_ID'];
     } else {
         $last_event_id = 0;
     }
     
     send_retry_message(250);
     
-    while (microtime(true) - $load_time < $server_timeout) {
-        $cache = load($cache_filename, false);
-        foreach ($cache as $message) {
-            if ($message['time'] > $last_event_id) {
-                $last_event_id = $message['time'];
-                if ($message['event'] != 'message') {
-                    $event = $message['event'];
-                } else {
-                    $event = null;
+    $last_load_time = 0;
+    
+    while (mtime() - $load_time < $server_timeout) {
+        $mtime = filemtime($cache_filename);
+        clearstatcache();
+        if ($mtime != $last_load_time) {
+            $cache = load($cache_filename, false);
+            $last_load_time = $mtime;
+            
+            foreach ($cache as $message) {
+                if ($message['time'] > $last_event_id) {
+                    $last_event_id = $message['time'];
+                    if ($message['event'] != 'message') {
+                        $event = $message['event'];
+                    } else {
+                        $event = null;
+                    }
+                    send_message($message['time'], json_encode($message), $event);
                 }
-                send_message($message['time'], json_encode($message), $event);
             }
         }
-        usleep(250000);
+        
+        usleep(100000);
     }
     
     exit();

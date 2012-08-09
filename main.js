@@ -1,18 +1,39 @@
 var ui = {
     init: function() {
         ui.chat.init();
+        ui.player.init();
     },
+    __eventUrl: 'event.json',
     playlist: {
+        __playlist: {},
+        __url: '',
+        init: function(callback) {
+            var this_class = this;
+            $.getJSON(this.__url, function(data) {
+                this_class.__playlist = data;
+                ui.playlist.importData(data);
+            });
+            
+            if (typeof(callback) == 'function') {
+                callback();
+            }
+        },
         importData: function(data) {
+            var itemIndex = 0;
+            var delayFactor = 50;
+            var fadeSpeed = 300;
             for (var i=0; i<data.sections.length; i++) {
                 var section = data.sections[i];
                 var html = '<div class="playlist_header">' + section.title + '</div><ul class="playlist_items"></ul>';
-                $("#playlist").append(html);
+                $(html).css({'opacity': '0'}).appendTo("#playlist").delay(delayFactor * itemIndex).fadeTo(fadeSpeed, 1);
+                itemIndex++;
                 var html = '';
                 for (var a=0; a<section.songs.length; a++) {
                     var song = section.songs[a];
                     var html = '<li>' + song.title + '</li>';
-                    $("#playlist ul:last-child").append(html);
+                    $(html).css({'opacity': '0'}).appendTo("#playlist ul:last-child").delay(delayFactor * itemIndex).fadeTo(fadeSpeed, 1).attr({'data-id': song.id, 'data-duration': song.duration});
+                    itemIndex++;
+                    
                 }
             }
         },
@@ -24,12 +45,24 @@ var ui = {
                     return false;
                 }
             })
+        },
+        getSongs: function() {
+            var data = ui.playlist.__playlist;
+            var songs = [];
+            for (var i=0; i<data.sections.length; i++) {
+                for (var a=0; a<data.sections[i].songs.length; a++) {
+                    songs.push(data.sections[i].songs[a]);
+                }
+            }
+            
+            //songs = songs.reverse();
+            
+            return songs;
         }
     },
     users: {
         refresh: function(newArray) {
             var results = this.__search(this.__getOldArray(), newArray);
-            console.log(results);
             for (var i=0; i<results.remove.length; i++) {
                 this.__remove(results.remove[i].index);
             }
@@ -128,7 +161,7 @@ var ui = {
                     ui.chat.typingNotification.display(data.name);
                 }, false);
                 source.addEventListener('debug', function(e) {
-                    alert(e.data);
+                    console.log(e.data);
                 })
                 
                 // Bind event handler to the input field to send a message
@@ -237,6 +270,143 @@ var ui = {
     },
     controls: {
         
+    },
+    player: {
+        __timeOffset: 0,
+        __eventData: {},
+        getTime: function() {
+            return Math.floor(Date.now() / 1000) + this.__timeOffset;
+        },
+        init: function() {
+            // Get event information
+            $.getJSON(ui.__eventUrl, function(eventData) {
+                console.log("Got event information");
+                ui.player.__eventData = eventData;
+                // Load current event playlist
+                ui.playlist.__url = eventData.playlist;
+                ui.playlist.init(function() {
+                    console.log("Loaded playlist");
+                    // Sync time with server
+                    $.get("time.txt?" + Date.now(), function(data, text, xhr) {
+                        var dateStr = xhr.getResponseHeader('Date');
+                        var serverTime = Date.parse(new Date(Date.parse(dateStr)).toUTCString()) / 1000;
+                        var localTime = Date.parse(new Date().toUTCString()) / 1000;
+                        ui.player.__timeOffset = serverTime -  localTime;
+                        
+                        console.log("Time offset calculated: " + ui.player.__timeOffset);
+                        
+                        // Use event start time to calculate current position in playlist
+                        var startTime = ui.player.__eventData.startTime;
+                        var timelinePosition = ui.player.getTime() - startTime;
+                        
+                        console.log(timelinePosition);
+                        
+                        // Make sure that the event has started, else don't play
+                        if (timelinePosition < 0) {
+                            alert("The event hasn't started yet!");
+                        } else {
+                            // Now figure out what song should be playing now
+                            var songs = ui.playlist.getSongs();
+                            console.log(songs);
+                            var totalDuration = 0;
+                            var currentIndex = null;
+                            for (var i=0; i<songs.length; i++) {
+                                totalDuration = totalDuration + songs[i].duration;
+                                if (totalDuration > timelinePosition) {
+                                    console.log("Found song at duration " + totalDuration);
+                                    currentIndex = i;
+                                    var time = timelinePosition - (totalDuration - songs[i].duration);
+                                    break;
+                                }
+                            }
+                            
+                            console.log(currentIndex);
+                            
+                            // If we ran out of songs, then the event is over
+                            if (currentIndex == null) {
+                                alert("Oops, the event is over already!");
+                            } else {
+                                // Setup the timeline and start playback
+                                ui.player.timelineSetup(currentIndex, time);
+                            }
+                        }
+                            
+                    });
+                });
+            });
+        },
+        timelineSetup: function(index, time) {
+            var songs = ui.playlist.getSongs();
+            
+            // Insert timeouts for playing the next songs to create the timeline
+            var totalTimeRemaining = songs[index].duration - time;
+            for (var i=index+1; i<songs.length; i++) {
+                console.log("Adding timeout at: " + totalTimeRemaining + " for song " + i);
+                this.__timelineAdd(i, totalTimeRemaining);
+                totalTimeRemaining = totalTimeRemaining + songs[i].duration;
+            }
+            
+            // Insert timeout for ending playback
+            console.log("Adding final timeout at: " + totalTimeRemaining);
+            window.setTimeout(function() {
+                ui.player.end();
+            }, totalTimeRemaining * 1000);
+            
+            // Play current song now
+            ui.player.play(index, time);
+        },
+        __timelineAdd: function(index, delay) {
+            window.setTimeout(function() {
+                ui.player.play(index, 0);
+            }, delay * 1000);
+        },
+        play: function(index, time) {
+            console.log("Playing song " + index + " at time " + time);
+            var songs = ui.playlist.getSongs();
+            var song = songs[index];
+            drivers.music.play(song, time);
+        },
+        end: function() {
+            return;
+        }
+    }
+}
+
+var drivers = {
+    music: {
+        __player: null,
+        __firstPlay: true,
+        play: function(song, time) {
+            if (this.__player == null) {
+                this.__player = new YT.Player('player', {
+                    height: '200',
+                    width: '280',
+                    videoId: song.id,
+                    playerVars: {
+                        controls: 0,
+                        disablekb: 1,
+                        showsearch: 0,
+                        modestbranding: 1,
+                        enablejsapi: 1
+                    },
+                    events: {
+                        'onReady': function(e) {
+                            if (drivers.music.__firstPlay) {
+                                e.target.seekTo(time, true);
+                                drivers.music.__firstPlay = false;
+                            }
+                        },
+                        'onStateChange': function(e) {
+                            if (e.data == YT.PlayerState.PAUSED) {
+                                e.target.playVideo();
+                            }
+                        }
+                    }
+                });
+            } else {
+                this.__player.loadVideoById(song.id);
+            }
+        }
     }
 }
 
@@ -250,6 +420,24 @@ var utils = {
     }
 }
 
+var includes = {
+    __scripts: ['//www.youtube.com/iframe_api'],
+    __numLoaded: 0,
+    init: function() {
+        for (var i=0; i<this.__scripts.length; i++) {
+            $.getScript(this.__scripts[i], function() {
+                includes.loaded();
+            })
+        }
+    },
+    loaded: function() {
+        this.__numLoaded++;
+        if (this.__numLoaded == this.__scripts.length) {
+            ui.init();
+        }
+    }
+}
+
 $(function() {
-    ui.init();
+    includes.init();
 });

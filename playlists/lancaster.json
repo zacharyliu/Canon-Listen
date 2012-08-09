@@ -1,0 +1,30 @@
+{
+    "sections": [
+        {
+            "title": "Upper Canon",
+            "songs": [
+                {"title": "American Pie", "id": "uAsV5-Hv-7U", "duration": 521},
+                {"title": "Forever Young", "id": "t1TcDHrkQYg", "duration": 218},
+                {"title": "Stairway to Heaven", "id": "dmKeIlJq4gM", "duration": 156},
+                {"title": "In Your Eyes", "id": "Zrzr4R3LpsQ", "duration": 300},
+                {"title": "Nightswimming", "id": "kmR-PgYGmWk", "duration": 255},
+                {"title": "Bizarre Love Triangle", "id": "xS7tFKNlyXc", "duration": 263},
+                {"title": "Mr. Brightside", "id": "SrkeWsQZNyU", "duration": 225}
+            ]
+        },
+        {
+            "title": "Lower Canon",
+            "songs": [
+                {"title": "Blister in the Sun"},
+                {"title": "Oh L'Amour"},
+                {"title": "Rock Lobster"},
+                {"title": "Dr. Mario"},
+                {"title": "James Brown Is Dead"},
+                {"title": "Birdhouse in Your Soul"},
+                {"title": "It's the End of the World as We Know It"},
+                {"title": "Tunak Tunak Tun"},
+                {"title": "The Time Warp"}
+            ]
+        }
+    ]
+}
