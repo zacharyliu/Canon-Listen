@@ -18,7 +18,7 @@ var ui = {
         __url: '',
         init: function(callback) {
             var this_class = this;
-            $.getJSON(this.__url, function(data) {
+            $.getJSON(this.__url + '?' + Date.now(), function(data) {
                 this_class.__playlist = data;
                 ui.playlist.importData(data);
             });
