@@ -303,7 +303,7 @@ body {
 
 #volumebar {
     margin: 15px auto 0 auto;
-    width: 100px;
+    width: 106px;
     height: 2px;
     background-color: #CCC;
     position: relative;
@@ -316,7 +316,7 @@ body {
     position: absolute;
     margin-top: -5px;
     margin-left: -6px;
-    left: 50%;
+    left: 100px;
     border-radius: 6px;
 }
 

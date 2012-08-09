@@ -1,6 +1,7 @@
 var ui = {
     init: function() {
         ui.chat.init();
+        ui.controls.init();
         ui.player.init();
     },
     __eventUrl: 'event.json',
@@ -280,6 +281,9 @@ var ui = {
         }
     },
     controls: {
+        init: function() {
+            this.volume.init();
+        },
         nowplaying: {
             update: function(title) {
                 $("#nowplaying_song").animate({opacity: 0}, 200, function() {
@@ -293,13 +297,22 @@ var ui = {
                 progress = (progress * 100) + "%";
                 $("#progressbar_inner").css({width: progress});
             }
+        },
+        volume: {
+            init: function() {
+                $("#volumebar_handle").draggable({'axis': 'x', 'containment': 'parent', 'drag': function(e, ui) {
+                    var left = $(this).css('left');
+                    left = left.substr(0, left.length-2);
+                    drivers.music.setVolume(left / 100);
+                }});
+            }
         }
     },
     player: {
         __eventData: {},
         init: function() {
             // Get event information
-            $.getJSON(ui.__eventUrl, function(eventData) {
+            $.getJSON(ui.__eventUrl + '?' + Date.now(), function(eventData) {
                 console.log("Got event information");
                 ui.player.__eventData = eventData;
                 // Load current event playlist
@@ -444,6 +457,12 @@ var drivers = {
             }
             
             ui.controls.progress.update(progress);
+        },
+        setVolume: function(volume) {
+            // volume is a float between 0 and 1 specifying the desired volume percentage
+            
+            volume = Math.floor(volume * 100);
+            drivers.music.__player.setVolume(volume);
         }
     }
 }
