@@ -244,6 +244,8 @@ body {
     bottom: 0;
     left: 0;
     height: 100px;
+    
+    display: none;
 }
 
 #controls_wrapper {
