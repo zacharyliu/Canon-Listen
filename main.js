@@ -1,8 +1,16 @@
 var ui = {
     init: function() {
-        ui.chat.init();
-        ui.controls.init();
-        ui.player.init();
+        // Get a chat username from the user
+        var prompt = new ui.prompt('Enter your name:', $.cookie('chat_name'));
+        prompt.onSubmit(function(data) {
+            ui.chat.name = data;
+            $.cookie('chat_name', data, {expires: 365});
+            
+            ui.chat.init();
+            ui.controls.init();
+            ui.player.init();
+        });
+        prompt.show();
     },
     __eventUrl: 'event.json',
     playlist: {
@@ -64,6 +72,7 @@ var ui = {
     },
     users: {
         refresh: function(newArray) {
+            newArray = newArray.sort();
             var results = this.__search(this.__getOldArray(), newArray);
             for (var i=0; i<results.remove.length; i++) {
                 this.__remove(results.remove[i].index);
@@ -79,6 +88,7 @@ var ui = {
             $("#users_list li").each(function() {
                 oldArray.push($(this).html());
             });
+            oldArray = oldArray.sort();
             return oldArray;
         },
         __search: function(oldArray, newArray) {
@@ -239,7 +249,7 @@ var ui = {
                 var count = utils.objCount(this.__current);
                 if (count == 0) {
                     if (!this.__hidden) {
-                        $("#chat_history_typing").html("").stop(true).animate({'opacity': '0', 'height': '0'}, 100);
+                        $("#chat_history_typing").html("").stop(true).animate({'opacity': '0', 'height': '0'}, 50);
                         this.__hidden = true;
                     }
                 } else {
@@ -262,7 +272,7 @@ var ui = {
                     }
                     $("#chat_history_typing").html(phrase);
                     if (this.__hidden) {
-                        $("#chat_history_typing").stop(true).css({'height': '20px'}).animate({'opacity': '1'}, 100);
+                        $("#chat_history_typing").stop(true).css({'height': '20px'}).animate({'opacity': '1'}, 50);
                         this.__hidden = false;
                     }
                 }
@@ -403,6 +413,47 @@ var ui = {
         },
         end: function() {
             return;
+        }
+    },
+    prompt: function(title, inital_value) {
+        var this_class = this;
+        var callback = function() {}
+        
+        // Setup prompt modal
+        var html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div><input class="prompt_input"></input></div></div>';
+        this.$ = $(html);
+        this.$.find('.prompt_title').html(title);
+        this.$.find('.prompt_input').attr('value', inital_value);
+        this.$.css({'display': 'none'}).appendTo('body');
+        
+        // Attach event handler to input box
+        this.$.find('.prompt_input').keypress(function(e) {
+            // If the enter key was pressed:
+            if (e.which == 13) {
+                var data = $(this).attr('value');
+                this_class.hide();
+                callback(data);
+            }
+        });
+        
+        this.onSubmit = function(newCallback) {
+            callback = newCallback;
+        }
+        
+        this.show = function() {
+            // Show prompt modal
+            this.$.css({'display': 'block'});
+            this.$.find('.prompt').css({'margin-top': '-150px'}).animate({'margin-top': '-100px'}, 200);
+            this.$.find('.prompt_modal').css({'opacity': 0}).animate({'opacity': 1}, 200);
+            this.$.find('.prompt_input').focus();
+        }
+        
+        this.hide = function() {
+            // Hide prompt modal
+            this.$.find('.prompt').animate({'margin-top': '-50px'}, 200);
+            this.$.animate({'opacity': 0}, 200, function() {
+                $(this).css({'display': 'none'});
+            });
         }
     }
 }
