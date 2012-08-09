@@ -4,7 +4,7 @@ $cache_filename = './chat.txt';
 $cache_timeout = 10000;
 $users_filename = './users.txt';
 $users_timeout = 60000;
-$server_timeout = 5000;
+$server_timeout = 25000;
 
 if (isset($_GET['name'])) {
     $name = $_GET['name'];
@@ -14,22 +14,7 @@ if (isset($_GET['name'])) {
 
 function load($filename, $persistant = true) {
     if (filesize($filename) > 0) {
-        $file = fopen($filename, 'r');
-        $data = false;
-//        if ($persistant) {
-///            while ($data == false) {
-//                $data = fread($file, filesize($filename));
-//            }
-//        } else {
-            $data = fread($file, filesize($filename));
-            if ($data == false) {
-                $data = array();
-            }
-//        }
-        fclose($file);
-        
-        //$data = preg_replace('!s:(\d+):"(.*?)";!se', "'s:'.strlen('$2').':\"$2\";'", $data); 
-        //$data = trim($data);
+        $data = file_get_contents($filename);
         $data = unserialize($data);
     } else {
         $data = array();
@@ -40,12 +25,7 @@ function load($filename, $persistant = true) {
 
 function write($filename, $data) {
     $data = serialize($data);
-    $file = fopen($filename, 'w');
-    $status = false;
-//    while ($status == false) {
-        $status = fwrite($file, $data);
-//    }
-    fclose($file);
+    file_put_contents($filename, $data);
 }
 
 function prune($data, $timeout) {
@@ -181,31 +161,26 @@ if (isset($_POST['message'])) {
         $last_event_id = $load_time;
     }
     
-    send_retry_message(100);
+    send_retry_message(200);
     
     $last_load_time = 0;
     
     while (mtime() - $load_time < $server_timeout) {
-        $mtime = filemtime($cache_filename);
-        clearstatcache();
-        if ($mtime != $last_load_time) {
-            $cache = load($cache_filename, false);
-            $last_load_time = $mtime;
-            
-            foreach ($cache as $message) {
-                if ($message['time'] > $last_event_id) {
-                    $last_event_id = $message['time'];
-                    if ($message['event'] != 'message') {
-                        $event = $message['event'];
-                    } else {
-                        $event = null;
-                    }
-                    send_message($message['time'], json_encode($message), $event);
+        $cache = load($cache_filename, false);
+        
+        foreach ($cache as $message) {
+            if ($message['time'] > $last_event_id) {
+                $last_event_id = $message['time'];
+                if ($message['event'] != 'message') {
+                    $event = $message['event'];
+                } else {
+                    $event = null;
                 }
+                send_message($message['time'], json_encode($message), $event);
             }
         }
         
-        usleep(100000);
+        usleep(200000);
     }
     
     exit();
