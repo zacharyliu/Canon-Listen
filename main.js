@@ -405,10 +405,10 @@ var drivers = {
                     },
                     events: {
                         'onReady': function(e) {
-                            if (drivers.music.__firstPlay) {
+                            //if (drivers.music.__firstPlay) {
                                 e.target.seekTo(time, true);
-                                drivers.music.__firstPlay = false;
-                            }
+                            //    drivers.music.__firstPlay = false;
+                            //}
                             drivers.music.__progressUpdater = window.setInterval(function() {
                                 drivers.music.updateProgress();
                             }, 200);
