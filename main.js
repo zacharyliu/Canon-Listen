@@ -12,7 +12,7 @@ var ui = {
         });
         prompt.show();
     },
-    __eventUrl: 'event.json',
+    __eventUrl: 'events.php',
     playlist: {
         __playlist: {},
         __url: '',
