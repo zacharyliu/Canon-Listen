@@ -4,7 +4,7 @@ $cache_filename = './chat.txt';
 $cache_timeout = 10000;
 $users_filename = './users.txt';
 $users_timeout = 60000;
-$server_timeout = 2000;
+$server_timeout = 5000;
 
 if (isset($_GET['name'])) {
     $name = $_GET['name'];
@@ -29,7 +29,7 @@ function load($filename, $persistant = true) {
         fclose($file);
         
         //$data = preg_replace('!s:(\d+):"(.*?)";!se', "'s:'.strlen('$2').':\"$2\";'", $data); 
-        $data = trim($data);
+        //$data = trim($data);
         $data = unserialize($data);
     } else {
         $data = array();
@@ -178,10 +178,10 @@ if (isset($_POST['message'])) {
     } else if (isset($_GET['Last-Event-ID'])) {
         $last_event_id = intval($_GET['Last-Event-ID']);
     } else {
-        $last_event_id = 0;
+        $last_event_id = $load_time;
     }
     
-    send_retry_message(250);
+    send_retry_message(100);
     
     $last_load_time = 0;
     

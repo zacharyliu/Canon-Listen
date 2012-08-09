@@ -384,9 +384,11 @@
         } else {
             var seperator = '?';
         }
-        url = url + seperator + 'Last-Event-ID=' + encodeURIComponent(lastEventId);
+        var newurl = url + seperator + 'Last-Event-ID=' + encodeURIComponent(lastEventId);
+      } else {
+        var newurl = url;
       }
-      xhr.open('POST', url, true);
+      xhr.open('POST', newurl, true);
 
       // withCredentials should be setted after "open" for Safari and Chrome (< 19 ?)
       xhr.withCredentials = withCredentials;
