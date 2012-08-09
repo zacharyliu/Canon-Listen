@@ -31,7 +31,7 @@ var ui = {
                 for (var a=0; a<section.songs.length; a++) {
                     var song = section.songs[a];
                     var html = '<li>' + song.title + '</li>';
-                    $(html).css({'opacity': '0'}).appendTo("#playlist ul:last-child").delay(delayFactor * itemIndex).fadeTo(fadeSpeed, 1).attr({'data-id': song.id, 'data-duration': song.duration});
+                    $(html).css({'opacity': '0'}).appendTo("#playlist ul:last-child").delay(delayFactor * itemIndex).fadeTo(fadeSpeed, 1);
                     itemIndex++;
                     
                 }
@@ -55,7 +55,7 @@ var ui = {
                 }
             }
             
-            //songs = songs.reverse();
+            songs = songs.reverse();
             
             return songs;
         }
@@ -381,6 +381,9 @@ var ui = {
             
             // Update the now playing indicator
             ui.controls.nowplaying.update(songs[index].title);
+            
+            // Update the currently playing song in the playlist display
+            ui.playlist.setCurrent(songs[index].title);
         },
         end: function() {
             return;
