@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Chat Connections Test</title>
+        <script type="text/javascript" src="jquery-1.7.2.min.js"></script>
+        <script type="text/javascript" src="eventsource.js"></script>
+        <script type="text/javascript">
+            var num = 0;
+            $(function() {
+                $("#add").click(function() {
+                    num++;
+                    $("#num").html(num);
+                    
+                    var html = '<div>Last recieved message at: <span class="last"></span></div>';
+                    var $connection = $(html);
+                    $connection.appendTo('body');
+                    $connection.find()
+                    
+                    var sse = new EventSource('chat.php?name=debug_' + Date.now());
+                    sse.addEventListener('message', function(e) {
+                        $connection.find('.last').html(Date.now());
+                    }, false);
+                });
+                
+                $("#send").click(function() {
+                    $.post('chat.php?name=debug', {'message': 'test'});
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div>Current # of connections: <span id="num"></span></div>
+        <div><a href="#" id="add">Add additional connection</a></div>
+        <div><a href="#" id="send">Send test message</a></div>
+    </body>
+</html>
