@@ -180,7 +180,7 @@ if (isset($_POST['message'])) {
             }
         }
         
-        usleep(200000);
+        usleep(1000000);
         exit();
     }
     
