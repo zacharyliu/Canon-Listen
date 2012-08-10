@@ -16,16 +16,16 @@ var ui = {
     playlist: {
         __playlist: {},
         __url: '',
+        __totalPlaylistDuration: 0,
         init: function(callback) {
             var this_class = this;
             $.getJSON(this.__url + '?' + Date.now(), function(data) {
                 this_class.__playlist = data;
                 ui.playlist.importData(data);
+                if (typeof(callback) == 'function') {
+                    callback();
+                }
             });
-            
-            if (typeof(callback) == 'function') {
-                callback();
-            }
         },
         importData: function(data) {
             var itemIndex = 0;
@@ -39,12 +39,13 @@ var ui = {
                 var html = '';
                 for (var a=0; a<section.songs.length; a++) {
                     var song = section.songs[a];
+                    ui.playlist.__totalPlaylistDuration = ui.playlist.__totalPlaylistDuration + song.duration;
                     var html = '<li>' + song.title + '</li>';
                     $(html).css({'opacity': '0'}).appendTo("#playlist ul:last-child").delay(delayFactor * itemIndex).fadeTo(fadeSpeed, 1);
                     itemIndex++;
-                    
                 }
             }
+            console.log("Total playlist duration: " + ui.playlist.__totalPlaylistDuration);
         },
         setCurrent: function(title) {
             $("#playlist li").each(function(){
