@@ -158,7 +158,8 @@ if (isset($_POST['message'])) {
     } else if (isset($_GET['Last-Event-ID'])) {
         $last_event_id = intval($_GET['Last-Event-ID']);
     } else {
-        $last_event_id = $load_time;
+        //$last_event_id = $load_time;
+        $last_event_id = 0;
     }
     
     send_retry_message(200);
