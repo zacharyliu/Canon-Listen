@@ -1,7 +1,7 @@
 <?php
 
 $users_filename = './users.txt';
-$users_timeout = 10000;
+$users_timeout = 20000;
 
 $retry_timeout = 3000;
 

@@ -18,6 +18,7 @@
                     $connection.find()
                     
                     var sse = new EventSource('chat.php?name=debug_' + Date.now());
+                    var sse2 = new EventSource('users.php?name=debug_' + Date.now());
                     sse.addEventListener('message', function(e) {
                         $connection.css({'background-color': 'yellow'}).animate({'background-color': 'white'}, 200);
                         $connection.find('.last').html(Date.now());
