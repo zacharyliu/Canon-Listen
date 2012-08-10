@@ -65,7 +65,7 @@ var ui = {
                 }
             }
             
-            songs = songs.reverse();
+            //songs = songs.reverse();
             
             return songs;
         }
