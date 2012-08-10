@@ -155,15 +155,19 @@ var ui = {
     chat: {
         name: 'anonymous',
         __getURL: function() {
-            return 'chat.php?name=' + encodeURIComponent(this.name)
+            return 'chat.php?name=' + encodeURIComponent(this.name);
+        },
+        __getURLUsers: function() {
+            return 'users.php?name=' + encodeURIComponent(this.name);
         },
         init: function() {
             // Initialize Server-Sent Events service
             //if (!!window.EventSource) {
                 var source = new EventSource(this.__getURL());
+                var source_users = new EventSource(this.__getURLUsers());
                 
                 // Add event handlers
-                source.addEventListener('users', function(e) {
+                source_users.addEventListener('users', function(e) {
                     var data = JSON.parse(e.data);
                     ui.users.refresh(data);
                 }, false);

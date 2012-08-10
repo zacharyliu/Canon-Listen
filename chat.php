@@ -2,90 +2,11 @@
 
 $cache_filename = './chat.txt';
 $cache_timeout = 10000;
-$users_filename = './users.txt';
-$users_timeout = 60000;
 $server_timeout = 25000;
 
-if (isset($_GET['name'])) {
-    $name = $_GET['name'];
-} else {
-    $name = 'anonymous';
-}
+$retry_timeout = 1000;
 
-function load($filename, $persistant = true) {
-    if (filesize($filename) > 0) {
-        $data = file_get_contents($filename);
-        $data = unserialize($data);
-    } else {
-        $data = array();
-    }
-    
-    return $data;
-}
-
-function write($filename, $data) {
-    $data = serialize($data);
-    file_put_contents($filename, $data);
-}
-
-function prune($data, $timeout) {
-    $i = 0;
-    while ($i < count($data)) {
-        if (mtime() - $data[$i]['time'] > $timeout) {
-            array_splice($data, $i, 1);
-        } else {
-            $i++;
-        }
-    }
-    
-    return $data;
-}
-
-function send_message($id, $msg, $event = null) {
-    if ($event != null) {
-        echo "event: $event" . PHP_EOL;
-    }
-    if ($id != null) {
-        echo "id: $id" . PHP_EOL;
-    }
-    echo "data: $msg" . PHP_EOL;
-    echo PHP_EOL;
-    ob_flush();
-    flush();
-}
-
-function send_retry_message($retry_time) {
-    echo "retry: $retry_time" . PHP_EOL;
-    echo PHP_EOL;
-    ob_flush();
-    flush();
-}
-
-function add_to_cache($event = 'message', $message = null) {
-    global $cache_filename, $cache_timeout, $name;
-    
-    // Load chat cache
-    $cache = load($cache_filename);
-    
-    // Prune old entries
-    $cache = prune($cache, $cache_timeout);
-    
-    // Add new entry
-    $entry = array('time' => mtime(), 'event' => $event, 'message' => $message, 'name' => $name);
-    array_push($cache, $entry);
-    
-    // Write new cache file
-    write($cache_filename, $cache);
-}
-
-function mtime() {
-    return intval(microtime(true) * 1000);
-}
-
-function error_handler($errno, $errstr) {
-    send_message(null, "Error: $errno - $errstr", 'debug');
-}
-set_error_handler('error_handler');
+require_once('functions.php');
 
 if (isset($_POST['message'])) {
     // Got a new message
@@ -127,30 +48,7 @@ if (isset($_POST['message'])) {
         echo ':' . str_repeat(' ', 2048) . "\n";
     }
     
-    // Refresh the current user in the list of online users
-    $users = load($users_filename);
-    $users = prune($users, $users_timeout);
-    // Make sure the user isn't already in the list
-    $user_already_present = false;
-    foreach ($users as $user) {
-        if ($user['name'] == $name) {
-            $user_already_present = true;
-            break;
-        }
-    }
-    if (!$user_already_present) {
-        $entry = array('time' => mtime(), 'name' => $name);
-        array_push($users, $entry);
-        write($users_filename, $users);
-    }
     
-    // Send the list of online users
-    $users_list = array();
-    foreach ($users as $user) {
-        array_push($users_list, $user['name']);
-    }
-    $users_list = json_encode($users_list);
-    send_message(null, $users_list, 'users');
     
     // Begin checking for new messages and streaming them to the browser when appropriate
     if (isset($_SERVER['HTTP_LAST_EVENT_ID'])) {
@@ -162,7 +60,7 @@ if (isset($_POST['message'])) {
         $last_event_id = 0;
     }
     
-    send_retry_message(500);
+    send_retry_message($retry_timeout);
     
     $last_load_time = 0;
     
