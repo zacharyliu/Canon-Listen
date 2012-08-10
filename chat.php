@@ -179,7 +179,7 @@ if (isset($_POST['message'])) {
                 send_message($message['time'], json_encode($message), $event);
             }
         }
-        
+        exit();
         usleep(200000);
     }
     
