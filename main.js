@@ -329,6 +329,10 @@ var ui = {
             $.getJSON(ui.__eventUrl + '?' + Date.now(), function(eventData) {
                 console.log("Got event information");
                 ui.player.__eventData = eventData;
+                
+                // Display event title
+                $("#event_title").html(' - ' + eventData.title);
+                
                 // Load current event playlist
                 ui.playlist.__url = eventData.playlist;
                 ui.playlist.init(function() {
