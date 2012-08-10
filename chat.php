@@ -162,7 +162,7 @@ if (isset($_POST['message'])) {
         $last_event_id = 0;
     }
     
-    send_retry_message(200);
+    send_retry_message(500);
     
     $last_load_time = 0;
     
