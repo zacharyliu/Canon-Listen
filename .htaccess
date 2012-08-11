@@ -1,0 +1,3 @@
+order allow,deny
+deny from 69.114.84.205
+allow from all
