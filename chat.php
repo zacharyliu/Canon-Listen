@@ -18,7 +18,7 @@ if (isset($_POST['message'])) {
     add_to_cache('message', $message);
     
     // Log the chat message
-    $log_message = $name . ': ' . $message . PHP_EOL;
+    $log_message = $name . ': ' . urldecode($message) . PHP_EOL;
     file_put_contents($log_filename, $log_message, FILE_APPEND);
 } else if (isset($_POST['event'])) {
     $event = $_POST['event'];
