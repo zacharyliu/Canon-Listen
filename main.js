@@ -12,7 +12,7 @@ var ui = {
         });
         prompt.show();
     },
-    __eventUrl: 'events.php',
+    __eventUrl: 'event.json',
     playlist: {
         __playlist: {},
         __url: '',
@@ -358,7 +358,9 @@ var ui = {
                         
                         // Make sure that the event has started, else don't play
                         if (timelinePosition < 0) {
-                            alert("The event hasn't started yet!");
+                            //alert("The event hasn't started yet!");
+                            // Queue up the timeline to play, and display a countdown
+                            ui.player.timelineSetup(-1, (-1) * timelinePosition);
                         } else {
                             // Now figure out what song should be playing now
                             var songs = ui.playlist.getSongs();
@@ -394,7 +396,11 @@ var ui = {
             var songs = ui.playlist.getSongs();
             
             // Insert timeouts for playing the next songs to create the timeline
-            var totalTimeRemaining = songs[index].duration - time;
+            if (index != -1) {
+                var totalTimeRemaining = songs[index].duration - time;
+            } else {
+                var totalTimeRemaining = time;
+            }
             for (var i=index+1; i<songs.length; i++) {
                 console.log("Adding timeout at: " + totalTimeRemaining + " for song " + i);
                 this.__timelineAdd(i, totalTimeRemaining);
@@ -404,11 +410,13 @@ var ui = {
             // Insert timeout for ending playback
             console.log("Adding final timeout at: " + totalTimeRemaining);
             window.setTimeout(function() {
-                ui.player.end();
+                ui.player.stop();
             }, totalTimeRemaining * 1000);
             
             // Play current song now
-            ui.player.play(index, time);
+            if (index != -1) {
+                ui.player.play(index, time);
+            }
         },
         __timelineAdd: function(index, delay) {
             window.setTimeout(function() {
@@ -530,6 +538,9 @@ var drivers = {
             
             volume = Math.floor(volume * 100);
             drivers.music.__player.setVolume(volume);
+        },
+        stop: function() {
+            drivers.music.__player.destroy();
         }
     }
 }
