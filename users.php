@@ -1,9 +1,9 @@
 <?php
 
 $users_filename = './users.txt';
-$users_timeout = 20000;
+$users_timeout = 30000;
 
-$retry_timeout = 3000;
+$retry_timeout = 2000;
 
 require_once('functions.php');
 
