@@ -6,6 +6,8 @@ $server_timeout = 25000;
 
 $retry_timeout = 1000;
 
+$log_filename = './log.txt';
+
 require_once('functions.php');
 
 if (isset($_POST['message'])) {
@@ -14,6 +16,10 @@ if (isset($_POST['message'])) {
     
     // Add message to cache
     add_to_cache('message', $message);
+    
+    // Log the chat message
+    $log_message = $name . ': ' . $message . PHP_EOL;
+    file_put_contents($log_filename, $log_message, FILE_APPEND);
 } else if (isset($_POST['event'])) {
     $event = $_POST['event'];
     
