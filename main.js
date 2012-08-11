@@ -211,6 +211,7 @@ var ui = {
         },
         message: {
             display: function(name, message) {
+                message = unescape(message);
                 var html = '<div class="chat_history_item"><span class="chat_history_item_name"></span><span class="chat_history_item_message"></span></div>';
                 $(html).insertBefore("#chat_history_typing").css({'opacity': 0}).animate({'opacity': 1}, 50);
                 $('.chat_history_item:last .chat_history_item_name').text(name);
@@ -224,7 +225,7 @@ var ui = {
             },
             send: function(message) {
                 if (message != '') {
-                    $.post(ui.chat.__getURL(), {'message': message});
+                    $.post(ui.chat.__getURL(), {'message': escape(message)});
                 }
             }
         },
