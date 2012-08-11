@@ -32,19 +32,19 @@ echo ':' . str_repeat(' ', 2048) . "\n";
 // Refresh the current user in the list of online users
 $users = load($users_filename);
 $users = prune($users, $users_timeout);
-// Make sure the user isn't already in the list
-$user_already_present = false;
-foreach ($users as $user) {
-    if ($user['name'] == $name) {
-        $user_already_present = true;
+
+// Remove the user's current entry in the list
+for ($i=0; $i<count($users); $i++) {
+    if ($users[$i]['name'] == $name) {
+        array_splice($users, $i, 1);
         break;
     }
 }
-if (!$user_already_present) {
-    $entry = array('time' => mtime(), 'name' => $name);
-    array_push($users, $entry);
-    write($users_filename, $users);
-}
+
+// Add the user to the list
+$entry = array('time' => mtime(), 'name' => $name);
+array_push($users, $entry);
+write($users_filename, $users);
 
 // Send the list of online users
 $users_list = array();
