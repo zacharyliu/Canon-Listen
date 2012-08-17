@@ -1,18 +1,78 @@
 var ui = {
+    __eventUrl: 'demomode.php',
+    socket: null,
     init: function() {
-        // Get a chat username from the user
-        var prompt = new ui.prompt('Enter your name:', $.cookie('chat_name'));
-        prompt.onSubmit(function(data) {
-            ui.chat.name = data;
-            $.cookie('chat_name', data, {expires: 365});
-            
+        // Connect to socket.io server
+        this.socket = io.connect('//'+ location.hostname + ':8080');
+        
+        // Login to chat server
+        ui.login(function() {
             ui.chat.init();
             ui.controls.init();
             ui.player.init();
+        })
+    },
+    login: function(callback) {
+        var this_class = this;
+        // Get a chat username from the user
+        ui.getName(function(name) {
+            // Attempt to login using name
+            this_class.socket.emit('login', {'name': name}, function(status) {
+                switch (status) {
+                    case 'success':
+                        callback();
+                        break;
+                    case 'taken':
+                        // Username is taken
+                        var info = new ui.prompt('Sorry, that name is already in use. Please try again with a new name.', null, 'info');
+                        info.onSubmit(function() {
+                            // Try again
+                            ui.login(callback);
+                        });
+                        info.show();
+                        break;
+                    case 'banned':
+                        var info = new ui.prompt('Sorry, you have been banned from the chatroom, but you may enjoy the music.', null, 'info');
+                        info.onSubmit(callback);
+                        info.show();
+                        break;
+                    case 'password':
+                        // Prompt for a password
+                        var info = new ui.prompt('Please enter your password:', null, 'password');
+                        info.onSubmit(function(password) {
+                            this_class.socket.emit('login', {'name': name, 'password': password}, function(status) {
+                                switch (status) {
+                                    case 'success':
+                                        callback();
+                                        break;
+                                    case 'incorrect':
+                                        var info = new ui.prompt('Sorry, you entered the wrong password. Please try again.', null, 'info');
+                                        info.onSubmit(function() {
+                                            // Try again
+                                            ui.login(callback);
+                                        });
+                                        info.show();
+                                        break;
+                                }
+                            });
+                        });
+                        info.show();
+                }
+            });
+        });
+    },
+    getName: function(callback) {
+        var prompt = new ui.prompt('Enter your name:', $.cookie('chat_name'));
+        prompt.onSubmit(function(name) {
+            ui.chat.name = name;
+            $.cookie('chat_name', name, {expires: 365});
+            
+            if (typeof(callback) === 'function') {
+                callback(name);
+            }
         });
         prompt.show();
     },
-    __eventUrl: 'event.json',
     playlist: {
         __playlist: {},
         __url: '',
@@ -133,7 +193,7 @@ var ui = {
         },
         __add: function(index, name) {
             // index is the new index of the item after insertion
-            var html = '<li>' + name + '</li>'; 
+            var html = '<li>' + utils.htmlEncode(name) + '</li>';
             var $object = $(html);
             $object.css({height: 0, opacity: 1}).addClass('animating');
             if (index < $("#users_list li:not(.animating)").length) {
@@ -153,65 +213,56 @@ var ui = {
         
     },
     chat: {
-        name: 'anonymous',
-        __getURL: function() {
-            return 'chat.php?name=' + encodeURIComponent(this.name);
-        },
-        __getURLUsers: function() {
-            return 'users.php?name=' + encodeURIComponent(this.name);
-        },
-        init: function() {
-            // Initialize Server-Sent Events service
-            //if (!!window.EventSource) {
-                var source = new EventSource(this.__getURL());
-                var source_users = new EventSource(this.__getURLUsers());
-                
-                // Add event handlers
-                source_users.addEventListener('users', function(e) {
-                    var data = JSON.parse(e.data);
-                    ui.users.refresh(data);
-                }, false);
-                source.addEventListener('message', function(e) {
-                    var data = JSON.parse(e.data);
-                    ui.chat.message.display(data.name, data.message);
-                }, false);
-                source.addEventListener('typing', function(e) {
-                    var data = JSON.parse(e.data);
-                    ui.chat.typingNotification.display(data.name);
-                }, false);
-                source.addEventListener('debug', function(e) {
-                    console.log(e.data);
-                })
-                
-                // Bind event handler to the input field to send a message
-                $("#chat_input_content").keypress(function(e) {// If the enter key is pressed
-                    if (e.which == 13) {
-                        // Get the current message
-                        var message = $("#chat_input_content").val();
-                        
-                        // Send the message
-                        ui.chat.message.send(message);
-                        
-                        // Clear the message from the input field
-                        $("#chat_input_content").val("");
-                    } else {
-                        // Send a typing notification, at most once a second
-                        ui.chat.typingNotification.send();
-                    }
-                });
-                
-                // Update the typing notifications once
-                ui.chat.typingNotification.__update();
-            //} else {
-            //    alert("Sorry, your browser does not support real-time chat. Enjoy the music!");
-            ///}
+        init: function() {                
+            // Add event handlers
+            ui.socket.on('userlist', function(data) {
+                ui.users.refresh(data);
+            });
+            ui.socket.on('chat', function(data) {
+                ui.chat.message.display(data.name, data.message);
+            });
+            ui.socket.on('typing', function(data) {
+                ui.chat.typingNotification.display(data.name);
+            });
+            ui.socket.on('debug', function(data) {
+                console.log(data);
+            });
+            ui.socket.on('server', function(data) {
+                ui.chat.message.displayServer(data);
+            });
+            ui.socket.on('disconnect', function() {
+                var info = new ui.prompt('You have been disconnected.', null, 'info');
+                info.show();
+            })
+            
+            // Bind event handler to the input field to send a message
+            $("#chat_input_content").keypress(function(e) {// If the enter key is pressed
+                if (e.which == 13) {
+                    // Get the current message
+                    var message = $("#chat_input_content").val();
+                    
+                    // Send the message
+                    ui.chat.message.send(message);
+                    
+                    // Clear the message from the input field
+                    $("#chat_input_content").val("");
+                } else {
+                    // Send a typing notification, at most once a second
+                    ui.chat.typingNotification.send();
+                }
+            });
+            
+            // Update the typing notifications once
+            ui.chat.typingNotification.__update();
             
             // Set focus to the chat box
             $("#chat_input_content").focus();
+            
+            // Send ready message
+            ui.socket.emit('ready');
         },
         message: {
             display: function(name, message) {
-                message = unescape(message);
                 var html = '<div class="chat_history_item"><span class="chat_history_item_name"></span><span class="chat_history_item_message"></span></div>';
                 $(html).insertBefore("#chat_history_typing").css({'opacity': 0}).animate({'opacity': 1}, 50);
                 $('.chat_history_item:last .chat_history_item_name').text(name);
@@ -223,9 +274,17 @@ var ui = {
                 // Scroll the chat history
                 $("#chat_history").scrollTo('max');
             },
+            displayServer: function(message) {
+                var html = '<div class="chat_history_item"><span class="chat_history_item_message chat_history_item_server"></span></div>';
+                $(html).insertBefore("#chat_history_typing").css({'opacity': 0}).animate({'opacity': 1}, 50);
+                $('.chat_history_item:last .chat_history_item_message').text(message);
+                
+                // Scroll the chat history
+                $("#chat_history").scrollTo('max');
+            },
             send: function(message) {
                 if (message != '') {
-                    $.post(ui.chat.__getURL(), {'message': escape(message)});
+                    ui.socket.emit('chat', {'message': message});
                 }
             }
         },
@@ -268,7 +327,7 @@ var ui = {
                     var names = [];
                     for (var item in this.__current) {
                         if (this.__current.hasOwnProperty(item)) {
-                            names.push(item);
+                            names.push(utils.htmlEncode(item));
                         }
                     }
                     var phrase = "";
@@ -296,7 +355,7 @@ var ui = {
             __floodRate: 1000,
             send: function() {
                 if (Date.now() - this.lastSent > this.__floodRate) {
-                    $.post(ui.chat.__getURL(), {'event': 'typing'});
+                    ui.socket.emit('typing');
                     this.lastSent = Date.now();
                 }
             }
@@ -439,26 +498,40 @@ var ui = {
             return;
         }
     },
-    prompt: function(title, inital_value) {
+    prompt: function(title, inital_value, type) {
         var this_class = this;
         var callback = function() {}
         
         // Setup prompt modal
-        var html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div><input class="prompt_input"></input></div></div>';
+        if (type == 'info') {
+            var html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div><input class="prompt_button" type="button" value="OK"></input></div></div>';
+        } else if (type == 'password') {
+            var html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div><input class="prompt_input" type="password"></input></div></div>';
+        } else {
+            var html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div><input class="prompt_input" type="text"></input></div></div>';
+        }
+        
         this.$ = $(html);
         this.$.find('.prompt_title').html(title);
-        this.$.find('.prompt_input').attr('value', inital_value);
+        if (type != 'info') {this.$.find('.prompt_input').attr('value', inital_value)};
         this.$.css({'display': 'none'}).appendTo('body');
         
-        // Attach event handler to input box
-        this.$.find('.prompt_input').keypress(function(e) {
-            // If the enter key was pressed:
-            if (e.which == 13) {
-                var data = $(this).attr('value');
+        if (type == 'info') {
+            this.$.find('.prompt_button').click(function(e) {
                 this_class.hide();
-                callback(data);
-            }
-        });
+                callback();
+            });
+        } else {
+            // Attach event handler to input box
+            this.$.find('.prompt_input').keypress(function(e) {
+                // If the enter key was pressed:
+                if (e.which == 13) {
+                    var data = $(this).attr('value');
+                    this_class.hide();
+                    callback(data);
+                }
+            });
+        }
         
         this.onSubmit = function(newCallback) {
             callback = newCallback;
@@ -469,7 +542,11 @@ var ui = {
             this.$.css({'display': 'block'});
             this.$.find('.prompt').css({'margin-top': '-150px'}).animate({'margin-top': '-100px'}, 200);
             this.$.find('.prompt_modal').css({'opacity': 0}).animate({'opacity': 1}, 200);
-            this.$.find('.prompt_input').focus();
+            if (type == 'info') {
+                this.$.find('.prompt_button').focus();
+            } else {
+                this.$.find('.prompt_input').focus();
+            }
         }
         
         this.hide = function() {
@@ -477,6 +554,7 @@ var ui = {
             this.$.find('.prompt').animate({'margin-top': '-50px'}, 200);
             this.$.animate({'opacity': 0}, 200, function() {
                 $(this).css({'display': 'none'});
+                $(this).remove();
             });
         }
     }
@@ -552,6 +630,12 @@ var utils = {
             if (obj.hasOwnProperty(key)) size++;
         }
         return size;
+    },
+    htmlEncode: function(text) {
+        return $('<div />').text(text).html();
+    },
+    htmlDecode: function(html) {
+        return $('<div />').html(html).text();
     }
 }
 

@@ -228,6 +228,10 @@ body {
     content: ': ';
 }
 
+.chat_history_item_server {
+    font-style: italic;
+}
+
 #chat_history_typing {
     font-style: italic;
     color: #555;

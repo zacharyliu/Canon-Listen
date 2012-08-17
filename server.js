@@ -12,6 +12,8 @@ var events = new events_module.EventEmitter();
 
 server.listen(8080);
 
+io.set('log level', 2);
+
 app.get('/', function(req, res) {
     res.redirect('http://canonlisten.tk');
 })
@@ -20,65 +22,96 @@ app.set('bans', []);
 app.set('users', []);
 
 function chat_init(socket) {
-    // Get name
-    socket.get('name', function(err, name) {
-        // Join the room
-        socket.join('chat');
-        
-        // Broadcast a connection message
-        server_notice(name + ' is now online');
-        
-        // Handle client messages
-        socket.on('chat', function(data) {
-            data.name = name;
-            socket.broadcast.to('chat').emit('chat', data);
-            fs.appendFile(logfile,  name + ': ' + data.message);
-        });
-        socket.on('typing', function(data) {
-            data.name = name;
-            socket.broadcast.to('chat').emit('typing', data);
-        });
-        
-        // Handle server side events
-        events.on('ban', function(data) {
-            var client_ip = socket.handshake.address.address;
-            if (client_ip == data.ip) {
-                server_notice(name + ' (' + client_ip + ') has been banned');
-                socket.disconnect();
+    socket.on('ready', function() {
+        // Get name
+        socket.get('name', function(err, name) {
+            // Join the room
+            socket.join('chat');
+            
+            console.log('User ' + name + ' has joined the chat');
+            
+            send_user_list(socket);
+            
+            // Broadcast a connection message
+            server_notice(name + ' is now online');
+            
+            // Handle client messages
+            socket.on('chat', function(data) {
+                data.name = name;
+                io.sockets.in('chat').emit('chat', data);
+                fs.appendFile(logfile,  name + ': ' + data.message);
+            });
+            socket.on('typing', function() {
+                var data = {'name': name};
+                io.sockets.in('chat').emit('typing', data);
+            });
+            
+            // Handle server side events
+            var ban_callback = function(data) {
+                var client_ip = socket.handshake.address.address;
+                if (client_ip == data.ip) {
+                    server_notice(name + ' (' + client_ip + ') has been banned');
+                    socket.disconnect();
+                }
             }
-        });
-        
-        // Broadcast a disconnection message when the client disconnects
-        socket.on('disconnect', function() {
-            server_notice(name + ' is now offline');
+            events.on('ban', ban_callback);
+            
+            // Broadcast a disconnection message when the client disconnects
+            socket.on('disconnect', function() {
+                events.removeListener('ban', ban_callback);
+                remove_user(socket, function() {
+                    server_notice(name + ' is now offline');
+                });
+            });
         });
     });
 }
 
-function append_user(name) {
-    var users = app.get('users');
-    if (users.indexOf(name) != -1) {
-        // User already exists
-        return false;
-    } else {
-        // User does not exist, add user to list
-        users.push(name);
-        app.set('users', users);
-        return true;
+function append_user(socket, callback) {
+    if (typeof(callback) !== 'function') {
+        callback = function() {}
     }
+    socket.get('name', function(err, name) {
+        var users = app.get('users');
+        if (users.indexOf(name) != -1) {
+            // User already exists
+            callback(false);
+        } else {
+            // User does not exist, add user to list
+            users.push(name);
+            app.set('users', users);
+            send_user_list();
+            callback(true);
+        }
+    });
 }
 
-function remove_user(name) {
+function remove_user(socket, callback) {
+    if (typeof(callback) !== 'function') {
+        callback = function() {}
+    }
+    socket.get('name', function(err, name) {
+        var users = app.get('users');
+        var index = users.indexOf(name);
+        if (index != -1) {
+            // User exists, remove user from list
+            users.pop(index);
+            app.set('users', users);
+            send_user_list();
+            callback(true);
+        } else {
+            // User does not exist
+            callback(false);
+        }
+    });
+}
+
+function send_user_list(socket) {
     var users = app.get('users');
-    var index = users.indexOf(name);
-    if (index != -1) {
-        // User exists, remove user from list
-        users.pop(index);
-        app.set('users', users);
-        return true;
+    if (typeof(socket) !== 'undefined') {
+        socket.emit('userlist', users);
     } else {
-        // User does not exist
-        return false;
+        io.sockets.in('chat').emit('userlist', users);
     }
 }
 
@@ -90,10 +123,16 @@ var mod = {
         });
         
         // Handle server side events
-        events.on('ban', function(data) {
+        var ban_callback = function(data) {
             // Send the new ban list to the moderator
             var bans = app.get('bans');
             socket.emit('ban_list', bans);
+        }
+        events.on('ban', ban_callback);
+        
+        // Handle disconnection event
+        socket.on('disconnect', function() {
+            events.removeListener('ban', ban_callback);
         });
     },
     ban: {
@@ -132,9 +171,9 @@ function server_notice(message) {
 io.sockets.on('connection', function(socket) {
     socket.on('login', function(data, callback) {
         if (data.name == 'Moderator') {
-            if (password in data) {
+            if ('password' in data) {
                 // Check password
-                if (password == 'qwertyuiop') {
+                if (data.password == 'qwertyuiop') {
                     socket.set('name', data.name, function() {
                         chat_init(socket);
                         mod.init(socket);
@@ -149,14 +188,16 @@ io.sockets.on('connection', function(socket) {
             }
         } else {
             if (!check_ban(socket)) {
-                if (append_user(data.name)) {
-                    socket.set('name', data.name, function() {
-                        chat_init(socket);
-                        callback('success');
+                socket.set('name', data.name, function() {
+                    append_user(socket, function(status) {
+                        if (status == true) {
+                            chat_init(socket);
+                            callback('success');
+                        } else {
+                            callback('taken');
+                        }
                     });
-                } else {
-                    callback('taken');
-                }
+                });
             } else {
                 callback('banned');
             }
