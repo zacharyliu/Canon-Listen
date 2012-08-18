@@ -1,5 +1,4 @@
-order allow,deny
-deny from 69.114.84.205
-deny from 68.196.141.218
-deny from 108.29.28.21
-allow from all
+<files server.js>
+ order allow,deny
+ deny from all
+</files>
