@@ -10,6 +10,11 @@ var logfile = '../canonlisten_log.txt';
 var events_module = require('events');
 var events = new events_module.EventEmitter();
 
+process.addListener("uncaughtException", function (err) {
+    console.log("Uncaught exception: " + err);
+    console.trace();
+});
+
 server.listen(8080);
 
 io.set('log level', 2);
