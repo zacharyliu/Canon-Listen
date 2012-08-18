@@ -28,8 +28,6 @@ function chat_init(socket) {
             // Join the room
             socket.join('chat');
             
-            console.log('User ' + name + ' has joined the chat');
-            
             send_user_list(socket);
             
             // Broadcast a connection message
@@ -39,7 +37,7 @@ function chat_init(socket) {
             socket.on('chat', function(data) {
                 data.name = name;
                 io.sockets.in('chat').emit('chat', data);
-                fs.appendFile(logfile,  name + ': ' + data.message);
+                log(name + ': ' + data.message);
             });
             socket.on('typing', function() {
                 var data = {'name': name};
@@ -65,6 +63,10 @@ function chat_init(socket) {
             });
         });
     });
+}
+
+function log(message) {
+    fs.appendFile(logfile,  message + '\n');
 }
 
 function append_user(socket, callback) {
@@ -165,7 +167,8 @@ function check_ban(socket) {
 
 function server_notice(message) {
     io.sockets.in('chat').emit('server', message);
-    fs.appendFile(logfile, message);
+    log(message);
+    console.log(message);
 }
 
 io.sockets.on('connection', function(socket) {
