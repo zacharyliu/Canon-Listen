@@ -233,7 +233,10 @@ var ui = {
             ui.socket.on('disconnect', function() {
                 var info = new ui.prompt('You have been disconnected.', null, 'info');
                 info.show();
-            })
+            });
+            ui.socket.on('ban_list', function(data) {
+                console.log(data);
+            });
             
             // Bind event handler to the input field to send a message
             $("#chat_input_content").keypress(function(e) {// If the enter key is pressed

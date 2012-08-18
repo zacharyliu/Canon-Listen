@@ -25,6 +25,7 @@ app.get('/', function(req, res) {
 
 app.set('bans', []);
 app.set('users', []);
+app.set('user_ips', {});
 
 function chat_init(socket) {
     socket.on('ready', function() {
@@ -87,6 +88,12 @@ function append_user(socket, callback) {
             // User does not exist, add user to list
             users.push(name);
             app.set('users', users);
+            
+            // Add user IP to list
+            var user_ips = app.get('user_ips');
+            user_ips[name] = socket.handshake.address.address;
+            app.set('user_ips', user_ips);
+            
             send_user_list();
             callback(true);
         }
@@ -104,6 +111,12 @@ function remove_user(socket, callback) {
             // User exists, remove user from list
             users.pop(index);
             app.set('users', users);
+            
+            // Remove user IP from list
+            var user_ips = app.get('user_ips');
+            delete user_ips[name];
+            app.set('user_ips', user_ips);
+            
             send_user_list();
             callback(true);
         } else {
@@ -127,6 +140,9 @@ var mod = {
         // Handle client messages
         socket.on('ban', function(data) {
             mod.ban.add(data.ip);
+        });
+        socket.on('ban_name', function(name) {
+            mod.ban.byName(name);
         });
         
         // Handle server side events
@@ -153,6 +169,10 @@ var mod = {
             var bans = app.get('bans');
             bans.pop(bans.indexOf(ip));
             app.set('bans', bans);
+        },
+        byName: function(name) {
+            var user_ips = app.get('user_ips');
+            mod.ban.add(user_ips[name]);
         }
     }
 }
