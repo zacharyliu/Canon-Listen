@@ -230,10 +230,10 @@ var ui = {
             ui.socket.on('server', function(data) {
                 ui.chat.message.displayServer(data);
             });
-            //ui.socket.on('disconnect', function() {
-            //    var info = new ui.prompt('You have been disconnected.', null, 'info');
-            //    info.show();
-            //});
+            ui.socket.on('disconnect', function() {
+                var info = new ui.prompt('You have been disconnected. Please refresh to try again.', null, 'info');
+                info.show();
+            });
             ui.socket.on('ban_list', function(data) {
                 console.log(data);
             });
