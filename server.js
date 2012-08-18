@@ -109,7 +109,7 @@ function remove_user(socket, callback) {
         var index = users.indexOf(name);
         if (index != -1) {
             // User exists, remove user from list
-            users.pop(index);
+            users.splice(index, 1);
             app.set('users', users);
             
             // Remove user IP from list
@@ -167,7 +167,7 @@ var mod = {
         },
         remove: function(ip) {
             var bans = app.get('bans');
-            bans.pop(bans.indexOf(ip));
+            bans.splice(bans.indexOf(ip), 1);
             app.set('bans', bans);
         },
         byName: function(name) {
