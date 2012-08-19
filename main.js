@@ -1,5 +1,6 @@
 var ui = {
-    __eventUrl: 'events/',
+    //__eventUrl: 'events/',
+    __eventUrl: 'demomode.php',
     socket: null,
     init: function() {
         // Connect to socket.io server
