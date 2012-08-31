@@ -1,32 +1,30 @@
 var ui = {
-    //__eventUrl: 'events/',
-    __eventUrl: 'demomode.php',
+    __eventUrl: 'events/',
     socket: null,
+    initialized: false,
     init: function() {
-        // Connect to socket.io server
-        this.socket = io.connect('//'+ location.hostname + ':8080');
-        
-        // Login to chat server
-        ui.login(function() {
-            ui.chat.init();
+        ui.chat.init(function() {
             ui.controls.init();
             ui.player.init();
-        })
+        });
     },
     login: function(callback) {
         var this_class = this;
-        // Get a chat username from the user
+        // Get chat username
         ui.getName(function(name) {
             // Attempt to login using name
             this_class.socket.emit('login', {'name': name}, function(status) {
                 switch (status) {
                     case 'success':
+                        console.log('Logged in with name ' + name);
                         callback();
                         break;
                     case 'taken':
                         // Username is taken
                         var info = new ui.prompt('Sorry, that name is already in use. Please try again with a new name.', null, 'info');
                         info.onSubmit(function() {
+                            // Clear stored name
+                            ui.chat.name = null;
                             // Try again
                             ui.login(callback);
                         });
@@ -40,7 +38,7 @@ var ui = {
                     case 'password':
                         // Prompt for a password
                         var info = new ui.prompt('Please enter your password:', null, 'password');
-                        info.onSubmit(function(password) {
+                        ui.getPassword(function(password) {
                             this_class.socket.emit('login', {'name': name, 'password': password}, function(status) {
                                 switch (status) {
                                     case 'success':
@@ -49,6 +47,8 @@ var ui = {
                                     case 'incorrect':
                                         var info = new ui.prompt('Sorry, you entered the wrong password. Please try again.', null, 'info');
                                         info.onSubmit(function() {
+                                            // Clear stored password
+                                            ui.chat.password = null;
                                             // Try again
                                             ui.login(callback);
                                         });
@@ -63,16 +63,39 @@ var ui = {
         });
     },
     getName: function(callback) {
-        var prompt = new ui.prompt('Enter your name:', $.cookie('chat_name'));
-        prompt.onSubmit(function(name) {
-            ui.chat.name = name;
-            $.cookie('chat_name', name, {expires: 365});
-            
+        if (ui.chat.name != null) {
             if (typeof(callback) === 'function') {
-                callback(name);
+                callback(ui.chat.name);
             }
-        });
-        prompt.show();
+        } else {
+            var prompt = new ui.prompt('Enter your name:', $.cookie('chat_name'));
+            prompt.onSubmit(function(name) {
+                ui.chat.name = name;
+                $.cookie('chat_name', name, {expires: 365});
+                
+                if (typeof(callback) === 'function') {
+                    callback(name);
+                }
+            });
+            prompt.show();
+        }
+    },
+    getPassword: function(callback) {
+        if (ui.chat.password != null) {
+            if (typeof(callback) === 'function') {
+                callback(ui.chat.password);
+            }
+        } else {
+            var prompt = new ui.prompt('Please enter your password:', null, 'password');
+            prompt.onSubmit(function(password) {
+                ui.chat.password = password;
+                
+                if (typeof(callback) === 'function') {
+                    callback(password);
+                }
+            });
+            prompt.show();
+        }
     },
     playlist: {
         __playlist: {},
@@ -214,8 +237,50 @@ var ui = {
         
     },
     chat: {
-        init: function() {                
+        name: null,
+        password: null,
+        connectingMessage: {
+            isShowing: false,
+            show: function() {
+                if (this.object == null) {
+                    this.object = new ui.prompt('Please wait, connecting...', null, 'blocking')
+                }
+                this.object.show();
+                this.isShowing = true;
+            },
+            hide: function() {
+                if (this.object != null) {
+                    this.object.hide();
+                }
+                this.isShowing = false;
+            },
+            object: null
+        },
+        init: function(callback) {
+            // Initalize socket.io
+            if (ui.socket == null) {
+                ui.socket = io.connect('//'+ location.hostname + ':8080');
+            };
+            
+            ui.chat.connectingMessage.show();
+            
             // Add event handlers
+            ui.socket.on('connect', function() {
+                console.log('Connected');
+                if (ui.chat.connectingMessage.isShowing) {
+                    ui.chat.connectingMessage.hide();
+                    ui.login(function() {
+                        if (!ui.initialized) {
+                            callback();
+                            ui.initialized = true;
+                            ui.chat.ready();
+                        }
+                        ui.socket.emit('ready');
+                    });
+                }
+            });
+        },
+        ready: function() {
             ui.socket.on('userlist', function(data) {
                 ui.users.refresh(data);
             });
@@ -232,8 +297,11 @@ var ui = {
                 ui.chat.message.displayServer(data);
             });
             ui.socket.on('disconnect', function() {
-                var info = new ui.prompt('You have been disconnected. Please refresh to try again.', null, 'info');
-                info.show();
+                //var info = new ui.prompt('You have been disconnected. Please refresh to try again.', null, 'info');
+                //info.show();
+                
+                console.log('Disconnected');
+                ui.chat.connectingMessage.show();
             });
             ui.socket.on('ban_list', function(data) {
                 console.log(data);
@@ -263,7 +331,7 @@ var ui = {
             $("#chat_input_content").focus();
             
             // Send ready message
-            ui.socket.emit('ready');
+            //ui.socket.emit('ready');
         },
         message: {
             display: function(name, message) {
@@ -509,6 +577,8 @@ var ui = {
         // Setup prompt modal
         if (type == 'info') {
             var html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div><input class="prompt_button" type="button" value="OK"></input></div></div>';
+        } else if (type == 'blocking') {
+            var html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div></div></div>';
         } else if (type == 'password') {
             var html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div><input class="prompt_input" type="password"></input></div></div>';
         } else {
@@ -523,15 +593,17 @@ var ui = {
         if (type == 'info') {
             this.$.find('.prompt_button').click(function(e) {
                 this_class.hide();
+                this_class.$.remove();
                 callback();
             });
-        } else {
+        } else if (type != 'blocking') {
             // Attach event handler to input box
             this.$.find('.prompt_input').keypress(function(e) {
                 // If the enter key was pressed:
                 if (e.which == 13) {
                     var data = $(this).attr('value');
                     this_class.hide();
+                    this_class.$.remove();
                     callback(data);
                 }
             });
@@ -543,12 +615,12 @@ var ui = {
         
         this.show = function() {
             // Show prompt modal
-            this.$.css({'display': 'block'});
+            this.$.css({'display': 'block', 'opacity': 1});
             this.$.find('.prompt').css({'margin-top': '-150px'}).animate({'margin-top': '-100px'}, 200);
             this.$.find('.prompt_modal').css({'opacity': 0}).animate({'opacity': 1}, 200);
             if (type == 'info') {
                 this.$.find('.prompt_button').focus();
-            } else {
+            } else if (type != 'blocking') {
                 this.$.find('.prompt_input').focus();
             }
         }
@@ -558,7 +630,7 @@ var ui = {
             this.$.find('.prompt').animate({'margin-top': '-50px'}, 200);
             this.$.animate({'opacity': 0}, 200, function() {
                 $(this).css({'display': 'none'});
-                $(this).remove();
+                //$(this).remove();
             });
         }
     }
