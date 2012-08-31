@@ -17,7 +17,7 @@ process.addListener("uncaughtException", function (err) {
 
 server.listen(8080);
 
-io.set('log level', 2);
+io.set('log level', 1);
 
 app.get('/', function(req, res) {
     res.redirect('http://canonlisten.tk');
