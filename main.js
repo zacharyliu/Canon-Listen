@@ -3,6 +3,10 @@ var ui = {
     socket: null,
     initialized: false,
     init: function() {
+        if (window.location.hash == '#demo') {
+            ui.__eventUrl = 'events/demomode.php';
+        }
+        
         ui.chat.init(function() {
             ui.controls.init();
             ui.player.init();
