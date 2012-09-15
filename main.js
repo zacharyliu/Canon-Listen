@@ -126,6 +126,9 @@ var ui = {
                 itemIndex++;
                 var html = '';
                 for (var a=0; a<section.songs.length; a++) {
+                    // Add 1 second to the duration of each song to account for song start lag
+                    section.songs[a].duration = section.songs[a].duration + 1;
+                    
                     var song = section.songs[a];
                     ui.playlist.__totalPlaylistDuration = ui.playlist.__totalPlaylistDuration + song.duration;
                     var html = '<li>' + song.title + '</li>';
