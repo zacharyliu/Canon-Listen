@@ -690,9 +690,9 @@ var drivers = {
                                 e.target.seekTo(time, true);
                                 drivers.music.__firstPlay = false;
                             }
-                            if (e.data == YT.PlayerState.PAUSED) {
+                            /*if (e.data == YT.PlayerState.PAUSED) {
                                 e.target.playVideo();
-                            }
+                            }*/
                         }
                     }
                 });
