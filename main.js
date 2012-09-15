@@ -290,6 +290,7 @@ var ui = {
             });
             ui.socket.on('chat', function(data) {
                 ui.chat.message.display(data.name, data.message);
+                ui.chat.notification.popup.display(data.name + ': ' + data.message);
             });
             ui.socket.on('typing', function(data) {
                 ui.chat.typingNotification.display(data.name);
@@ -433,6 +434,23 @@ var ui = {
                 if (Date.now() - this.lastSent > this.__floodRate) {
                     ui.socket.emit('typing');
                     this.lastSent = Date.now();
+                }
+            }
+        },
+        notification: {
+            popup: {
+                display: function(message) {
+                    if (!document.hasFocus()) {
+                        var notification = webkitNotifications.createNotification(null, $("#title").text(), message);
+                        notification.show();
+                        notification.onclick = function() {
+                            window.focus();
+                            notification.cancel();
+                        };
+                        notification.onclose = function() {
+                            notification.cancel();
+                        };
+                    }
                 }
             }
         }
