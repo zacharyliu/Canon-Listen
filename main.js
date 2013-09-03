@@ -21,6 +21,11 @@ var ui = {
                 switch (status) {
                     case 'success':
                         console.log('Logged in with name ' + name);
+                        try {
+                            woopra.identify({'name': name}).push();
+                        } catch (err) {
+                            console.log("Could not send Woopra identification: Woopra not initialized");
+                        }
                         callback();
                         break;
                     case 'taken':
