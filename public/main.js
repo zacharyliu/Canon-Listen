@@ -35,7 +35,7 @@ var ui = {
                         info.show();
                         break;
                     case 'banned':
-                        var info = new ui.prompt('Sorry, you have been banned from the chatroom, but you may enjoy the music.', null, 'info');
+                        var info = new ui.prompt('Sorry, you have been banned from the chat room, but you may enjoy the music.', null, 'info');
                         info.onSubmit(callback);
                         info.show();
                         break;
@@ -124,14 +124,14 @@ var ui = {
                 var html = '<div class="playlist_header">' + section.title + '</div><ul class="playlist_items"></ul>';
                 $(html).css({'opacity': '0'}).appendTo("#playlist").delay(delayFactor * itemIndex).fadeTo(fadeSpeed, 1);
                 itemIndex++;
-                var html = '';
+                html = '';
                 for (var a=0; a<section.songs.length; a++) {
                     // Add 1 second to the duration of each song to account for song start lag
                     section.songs[a].duration = section.songs[a].duration + 1;
                     
                     var song = section.songs[a];
                     ui.playlist.__totalPlaylistDuration = ui.playlist.__totalPlaylistDuration + song.duration;
-                    var html = '<li>' + song.title + '</li>';
+                    html = '<li>' + song.title + '</li>';
                     $(html).css({'opacity': '0'}).appendTo("#playlist ul:last-child").delay(delayFactor * itemIndex).fadeTo(fadeSpeed, 1);
                     itemIndex++;
                 }
@@ -186,7 +186,7 @@ var ui = {
         __search: function(oldArray, newArray) {
             var results = {
                 remove: [],
-                add: [],
+                add: []
             };
             // Iterate through old users and find users to remove
             var i = 0;
@@ -198,7 +198,7 @@ var ui = {
                     // Get old index, then remove from old array to recalculate index for next item
                     var index = $.inArray(item, oldArray);
                     results.remove.push({index: index});
-                    oldArray.pop(index);
+                    oldArray.pop(index); //TODO: check if pop() or splice() is correct here
                 } else {
                     i++;
                 }
@@ -225,14 +225,14 @@ var ui = {
         __add: function(index, name) {
             // index is the new index of the item after insertion
             var html = '<li>' + utils.htmlEncode(name) + '</li>';
-            var $object = $(html);
-            $object.css({height: 0, opacity: 1}).addClass('animating');
+            var object = $(html);
+            object.css({height: 0, opacity: 1}).addClass('animating');
             if (index < $("#users_list li:not(.animating)").length) {
-                $("#users_list li:not(.animating)").eq(index).before($object);
+                $("#users_list li:not(.animating)").eq(index).before(object);
             } else {
-                $("#users_list").append($object);
+                $("#users_list").append(object);
             }
-            $object.animate({height: '1.3em', opacity: 1}, 500, function(){
+            object.animate({height: '1.3em', opacity: 1}, 500, function(){
                 $(this).removeClass('animating');
             });
         },
@@ -264,11 +264,11 @@ var ui = {
             object: null
         },
         init: function(callback) {
-            // Initalize socket.io
+            // Initialize socket.io
             if (ui.socket == null) {
                 ui.socket = io.connect('//'+ location.hostname + ':8080');
-            };
-            
+            }
+
             ui.chat.connectingMessage.show();
             
             // Add event handlers
@@ -467,7 +467,7 @@ var ui = {
                 $("#nowplaying_song").animate({opacity: 0}, 200, function() {
                     $(this).html(title).animate({opacity: 1}, 200);
                 });
-            },
+            }
         },
         progress: {
             update: function(progress) {
@@ -595,24 +595,25 @@ var ui = {
             return;
         }
     },
-    prompt: function(title, inital_value, type) {
+    prompt: function(title, initial_value, type) {
         var this_class = this;
-        var callback = function() {}
+        var callback = function(data) {};
         
         // Setup prompt modal
+        var html;
         if (type == 'info') {
-            var html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div><input class="prompt_button" type="button" value="OK"></input></div></div>';
+            html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div><input class="prompt_button" type="button" value="OK"></div></div>';
         } else if (type == 'blocking') {
-            var html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div></div></div>';
+            html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div></div></div>';
         } else if (type == 'password') {
-            var html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div><input class="prompt_input" type="password"></input></div></div>';
+            html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div><input class="prompt_input" type="password"></div></div>';
         } else {
-            var html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div><input class="prompt_input" type="text"></input></div></div>';
+            html = '<div class="prompt_modal"><div class="prompt"><div class="prompt_title"></div><input class="prompt_input" type="text"></div></div>';
         }
         
         this.$ = $(html);
         this.$.find('.prompt_title').html(title);
-        if (type != 'info') {this.$.find('.prompt_input').attr('value', inital_value)};
+        if (type != 'info') {this.$.find('.prompt_input').attr('value', initial_value)};
         this.$.css({'display': 'none'}).appendTo('body');
         
         if (type == 'info') {
@@ -636,7 +637,7 @@ var ui = {
         
         this.onSubmit = function(newCallback) {
             callback = newCallback;
-        }
+        };
         
         this.show = function() {
             // Show prompt modal
@@ -648,7 +649,7 @@ var ui = {
             } else if (type != 'blocking') {
                 this.$.find('.prompt_input').focus();
             }
-        }
+        };
         
         this.hide = function() {
             // Hide prompt modal
@@ -659,7 +660,7 @@ var ui = {
             });
         }
     }
-}
+};
 
 var drivers = {
     music: {
@@ -722,7 +723,7 @@ var drivers = {
             drivers.music.__player.destroy();
         }
     }
-}
+};
 
 var utils = {
     objCount: function(obj) {
@@ -738,7 +739,7 @@ var utils = {
     htmlDecode: function(html) {
         return $('<div />').html(html).text();
     }
-}
+};
 
 var includes = {
     __scripts: ['//www.youtube.com/iframe_api'],
@@ -756,7 +757,7 @@ var includes = {
             ui.init();
         }
     }
-}
+};
 
 $(function() {
     includes.init();

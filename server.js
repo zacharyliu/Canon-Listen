@@ -4,6 +4,7 @@ var app = express();
 var server = http.createServer(app);
 var io = require('socket.io').listen(server);
 var fs = require('fs');
+var port = process.env.PORT || 8080;
 
 var logfile = '../canonlisten_log.txt';
 
@@ -15,13 +16,17 @@ process.addListener("uncaughtException", function (err) {
     console.trace();
 });
 
-server.listen(8080);
+server.listen(port, function() {
+    console.log('Listening on port ' + port);
+});
 
 io.set('log level', 1);
 
 app.get('/', function(req, res) {
-    res.redirect('http://canonlisten.tk');
-})
+    res.sendfile('index.html');
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.set('bans', []);
 app.set('users', []);
