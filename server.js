@@ -105,7 +105,12 @@ function chat_init(socket) {
 }
 
 function log(message) {
-    fs.appendFile(logfile,  message + '\n');
+    console.log(message);
+    try {
+        fs.appendFile(logfile,  message + '\n');
+    } catch (e) {
+        console.log('Unable to save message to logfile ' + logfile);
+    }
 }
 
 function append_user(socket, callback) {
