@@ -42,6 +42,20 @@ app.get('/events', function(req, res) {
     res.send(JSON.stringify(data));
 });
 
+app.get('/events/demomode.php', function(req, res) {
+    var interval = 60*120; // number of seconds between new events
+    var data = {
+        title: 'Demo Mode',
+        playlist: 'playlists/imported.json',
+        startTime: Math.floor(Date.now()/1000/interval)*interval,
+    };
+    res.set({
+        'Content-Type': 'text/json',
+        'Cache-Control': 'no-cache',
+    });
+    res.send(JSON.stringify(data));
+});
+
 app.set('bans', []);
 app.set('users', []);
 app.set('user_ips', {});
