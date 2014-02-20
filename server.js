@@ -4,6 +4,7 @@ var app = express();
 var server = http.createServer(app);
 var io = require('socket.io').listen(server);
 var fs = require('fs');
+require('datejs');
 
 var logfile = '../canonlisten_log.txt';
 
@@ -19,9 +20,27 @@ server.listen(8080);
 
 io.set('log level', 1);
 
-app.get('/', function(req, res) {
-    res.redirect('http://canonlisten.tk');
-})
+app.use(express.static(__dirname + '/public'));
+
+app.get('/events', function(req, res) {
+    var today = Date.today();
+    var targetDate;
+    if (today.is().friday() || today.is().saturday()) {
+        targetDate = today;
+    } else {
+        targetDate = Date.parse('next Friday');
+    }
+    var data = {
+        startTime: Math.round(targetDate.set({hour: 21}).getTime() / 1000),
+        title: 'Online Dance',
+        playlist: 'playlists/onlinedance.json',
+    }
+    res.set({
+        'Content-Type': 'text/json',
+        'Cache-Control': 'no-cache',
+    })
+    res.send(JSON.stringify(data));
+});
 
 app.set('bans', []);
 app.set('users', []);
