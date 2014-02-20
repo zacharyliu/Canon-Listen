@@ -271,7 +271,7 @@ var ui = {
         init: function(callback) {
             // Initalize socket.io
             if (ui.socket == null) {
-                ui.socket = io.connect('//'+ location.hostname + ':8080');
+                ui.socket = io.connect();
             };
             
             ui.chat.connectingMessage.show();
