@@ -16,7 +16,7 @@ process.addListener("uncaughtException", function (err) {
     console.trace();
 });
 
-server.listen(8080);
+server.listen(process.env.PORT || 8080);
 
 io.set('log level', 1);
 
