@@ -105,12 +105,12 @@ function chat_init(socket) {
 }
 
 function log(message) {
-    console.log(message);
-    try {
-        fs.appendFile(logfile,  message + '\n');
-    } catch (e) {
-        console.log('Unable to save message to logfile ' + logfile);
-    }
+    console.log('[' + (new Date()).toISOString() + '] ' + message);
+    // try {
+    //     fs.appendFile(logfile,  message + '\n');
+    // } catch (e) {
+    //     console.log('Unable to save message to logfile ' + logfile);
+    // }
 }
 
 function append_user(socket, callback) {
@@ -231,7 +231,6 @@ function check_ban(socket) {
 function server_notice(message) {
     io.sockets.in('chat').emit('server', message);
     log(message);
-    console.log(message);
 }
 
 io.sockets.on('connection', function(socket) {
